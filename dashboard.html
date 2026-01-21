@@ -511,7 +511,7 @@
             document.getElementById('scoreLabel').textContent = minScore;
 
             const filtered = allData.filter(d => {
-                const regionMatch = regionFilter === 'all' || d.region.includes(regionFilter);
+                const regionMatch = regionFilter === 'all' || d.region.split(';').map(x=>x.trim()).includes(regionFilter);
                 const sectorMatch = sectorFilter === 'all' || d.sector.includes(sectorFilter);
                 const impactMatch = impactFilter === 'all' || d.impact.includes(impactFilter);
                 const scoreMatch = d.score >= minScore;
@@ -612,3 +612,4 @@
     </script>
 </body>
 </html>
+
