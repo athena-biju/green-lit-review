@@ -511,9 +511,15 @@
             document.getElementById('scoreLabel').textContent = minScore;
 
             const filtered = allData.filter(d => {
-                const regionMatch = regionFilter === 'all' || d.region.split(';').map(x=>x.trim()).includes(regionFilter);
-                const sectorMatch = sectorFilter === 'all' || d.sector.includes(sectorFilter);
-                const impactMatch = impactFilter === 'all' || d.impact.includes(impactFilter);
+              const hasTag = (field, value) =>
+                  String(field || "")
+                    .split(";")
+                    .map(x => x.trim())
+                    .includes(value);
+                
+                const sectorMatch = sectorFilter === 'all' || hasTag(d.sector, sectorFilter);
+                const impactMatch = impactFilter === 'all' || hasTag(d.impact, impactFilter);
+                const regionMatch = regionFilter === 'all' || hasTag(d.region, regionFilter);
                 const scoreMatch = d.score >= minScore;
                 const searchMatch = d.title.toLowerCase().includes(searchText);
                 
@@ -612,4 +618,3 @@
     </script>
 </body>
 </html>
-
