@@ -10,6 +10,29 @@
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <script>
+        function loadDataFromCSV(csvText) {
+          const res = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true
+          });
+
+          const rows = res.data || [];
+          return rows.map(r => ({
+            title: r.title || r.Title || "Untitled",
+            doi: r.doi || r.DOI || "",
+            score: parseInt(r.internal_quality_score || r.score || r.peer_review_score || 0) || 0,
+            region: r.region || r.Region || "Unspecified",
+            sector: r.sector || r.Sector || "Unspecified",
+            impact: r.type_of_impact || r.impact || r.outcome || "Unspecified",
+            year: r.publication_year || r.year || "",
+            journal: r.journal || r.Journal || ""
+          }));
+        }
+    </script>
     
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -421,51 +444,6 @@
 "Women Directors on Corporate Boards:",10.1007/s10551-011-0815-z,2011,Unspecified,Unspecified,Unspecified,Unspecified,6`;
 
         let allData = [];
-
-        // --- 2. CSV Parsing Logic ---
-        function loadDataFromCSV(csvText) {
-            const lines = csvText.trim().split('\n');
-            // Parse headers
-            const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g, ''));
-            
-            // Map headers to internal keys
-            const mapIdx = {
-                title: headers.findIndex(h => h.includes('title')),
-                doi: headers.findIndex(h => h.includes('doi')),
-                score: headers.findIndex(h => h.includes('internal_quality') || h.includes('score') || h.includes('peer')),
-                region: headers.findIndex(h => h.includes('region')),
-                sector: headers.findIndex(h => h.includes('sector')),
-                impact: headers.findIndex(h => h.includes('type_of_impact') || h.includes('impact') || h.includes('outcome')),
-                year: headers.findIndex(h => h.includes('year') || h.includes('publication')),
-                journal: headers.findIndex(h => h.includes('journal'))
-            };
-
-            const parsed = [];
-            
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                
-                // Regex to handle quoted CSV fields
-                const matches = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
-                
-                if (matches) {
-                    const cleanMatches = matches.map(m => m.replace(/^"|"$/g, '').trim());
-                    
-                    let row = {
-                        title: mapIdx.title > -1 ? cleanMatches[mapIdx.title] : "Untitled",
-                        doi: mapIdx.doi > -1 ? cleanMatches[mapIdx.doi] : "",
-                        score: mapIdx.score > -1 ? (parseInt(cleanMatches[mapIdx.score]) || 0) : 0,
-                        region: (mapIdx.region > -1 && cleanMatches[mapIdx.region]) ? cleanMatches[mapIdx.region] : "Unspecified",
-                        sector: (mapIdx.sector > -1 && cleanMatches[mapIdx.sector]) ? cleanMatches[mapIdx.sector] : "Unspecified",
-                        impact: (mapIdx.impact > -1 && cleanMatches[mapIdx.impact]) ? cleanMatches[mapIdx.impact] : "Unspecified",
-                        year: (mapIdx.year > -1 && cleanMatches[mapIdx.year]) ? cleanMatches[mapIdx.year] : "",
-                        journal: (mapIdx.journal > -1 && cleanMatches[mapIdx.journal]) ? cleanMatches[mapIdx.journal] : ""
-                    };
-                    parsed.push(row);
-                }
-            }
-            return parsed;
-        }
 
         // --- 3. Dashboard Logic ---
         function initDashboard() {
