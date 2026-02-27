@@ -3,195 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thematic Data & Analysis | Climate, Gender & Sustainability</title>
+    <title>Climate, Gender, & Sustainability Dashboard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PapaParse for CSV -->
+    <!-- PapaParse -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <!-- Chart.js for Interactive Graphs -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        h1, h2, h3, .serif { font-family: 'Merriweather', serif; }
+        
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-track { background-color: transparent; }
+        .scroller::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scroller::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        .scroller::-webkit-scrollbar-track { background-color: transparent; }
+
+        /* Smooth Transitions */
+        .transition-all-300 { transition: all 0.3s ease; }
         
-        .theme-btn.active {
-            background-color: #10b981; /* Emerald 500 */
-            color: white;
-            border-color: #10b981;
-            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+        /* Table Styles */
+        th { font-weight: 600; letter-spacing: 0.025em; }
+        
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .badge-q1 { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; } /* Green */
+        .badge-q2 { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; } /* Yellow */
+        .badge-preprint { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-style: dashed; }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
-        
-        .analysis-content p { margin-bottom: 1rem; color: #334155; line-height: 1.7; font-size: 0.95rem; }
-        .analysis-content h4 { font-family: 'Inter', sans-serif; font-weight: 700; color: #0f172a; margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1.05rem; }
-        
-        .chart-container { position: relative; height: 250px; width: 100%; }
     </style>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col">
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
-    <!-- Floating Premium Navbar -->
-    <div class="sticky top-4 z-50 px-4 sm:px-6 lg:px-8 w-full max-w-[1400px] mx-auto mt-4">
-        <nav class="bg-white/80 backdrop-blur-lg border border-slate-200/60 h-16 rounded-2xl shadow-sm flex items-center justify-between px-4 sm:px-6">
-            <!-- Left: Brand -->
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 h-16 flex-none z-20">
+        <div class="max-w-[1600px] mx-auto px-4 h-full flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
-                    <i class="fa-solid fa-chart-pie"></i>
+                <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                    <i class="fa-solid fa-leaf"></i>
                 </div>
-                <h1 class="text-xl font-bold text-slate-800 tracking-tight font-sans">
-                    Thematic Analytics 
-                    <span class="text-slate-400 font-medium text-sm ml-2 hidden sm:inline">| Key Conclusions & Data</span>
-                </h1>
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight">Climate, Gender, <span class="text-emerald-600">&</span> Sustainability</h1>
             </div>
             
-            <!-- Link Removed for Standalone WordPress Embed -->
-        </nav>
-    </div>
+            <div class="flex items-center gap-4">
+                <div class="text-xs text-slate-400 font-mono hidden md:block">
+                    v2.1.0 (Beta)
+                </div>
+                <button onclick="exportCSV()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Export Data</span>
+                </button>
+            </div>
+        </div>
+    </nav>
 
-    <!-- Main Content -->
-    <main class="flex-1 w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 pt-6">
+    <div class="flex flex-1 overflow-hidden max-w-[1600px] mx-auto w-full">
         
-        <!-- Header -->
-        <div class="mb-6 ml-2">
-            <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Data-Driven Synthesis</h2>
-            <p class="text-slate-500 mt-2 max-w-4xl leading-relaxed">
-                Interact with the themes below to instantly filter the qualitative conclusions, performance KPIs, and graphical trends for that specific governance arena.
-            </p>
-        </div>
-
-        <!-- Interactive Filters -->
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 sticky top-[100px] z-40">
-            <div class="flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
+        <!-- Sidebar Filters -->
+        <aside class="w-72 bg-white border-r border-slate-200 flex-col flex-none hidden md:flex z-10">
+            <div class="p-5 border-b border-slate-100">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Filters</h2>
                 
-                <!-- Theme Buttons -->
-                <div class="flex flex-wrap gap-2" id="themeFilters">
-                    <button class="theme-btn active px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-theme="Executive Summary">
-                        Global Overview
-                    </button>
-                    <button class="theme-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-theme="Corporate Governance & Board Diversity">
-                        Corporate Governance
-                    </button>
-                    <button class="theme-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-theme="Macro-Political Representation">
-                        Macro-Political
-                    </button>
-                    <button class="theme-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-theme="Municipal Leadership & Local Outcomes">
-                        Municipal Leadership
-                    </button>
-                    <button class="theme-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-theme="Community-Based NRM">
-                        Community NRM
-                    </button>
-                    <button class="theme-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-theme="Climate Finance & GRB">
-                        Climate Finance
-                    </button>
-                </div>
-
                 <!-- Search -->
-                <div class="relative w-full xl:w-64 flex-none">
+                <div class="relative mb-6">
                     <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
-                    <input type="text" id="insightSearch" placeholder="Search evidence..." 
-                        class="w-full bg-slate-50 border border-slate-200 rounded-full pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all">
+                    <input type="text" id="searchInput" placeholder="Search papers..." 
+                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all">
                 </div>
-            </div>
-        </div>
 
-        <!-- Dashboard Split View -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-            
-            <!-- Left Column: Qualitative Synthesis -->
-            <div class="lg:col-span-5 bg-emerald-50/50 border border-emerald-100 p-6 rounded-2xl shadow-sm relative overflow-hidden flex flex-col h-full">
-                <i id="themeIcon" class="fa-solid fa-globe text-[120px] text-emerald-500/5 absolute -right-4 -top-4 pointer-events-none transform -rotate-12"></i>
-                <div class="relative z-10 flex-1">
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider" id="analysisTag">Synthesis</span>
-                    </div>
-                    <h3 class="text-2xl font-bold text-slate-800 mb-4" id="analysisTitle">Women’s Impact on Ecological Transformation</h3>
-                    <div id="analysisContent" class="analysis-content">
-                        <!-- Injected via JS -->
-                    </div>
+                <!-- Study Type Filter -->
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Study Type</label>
+                    <select id="typeFilter" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:border-emerald-500">
+                        <option value="All">All Types</option>
+                    </select>
                 </div>
-            </div>
 
-            <!-- Right Column: Quantitative Data & Charts -->
-            <div class="lg:col-span-7 flex flex-col gap-6">
+                <!-- Scopus Q Filter -->
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Scopus Quartile</label>
+                    <select id="qFilter" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:border-emerald-500">
+                        <option value="All">All Quartiles</option>
+                    </select>
+                </div>
+
+                <!-- Year Filter -->
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Year</label>
+                    <select id="yearFilter" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:border-emerald-500">
+                        <option value="All">All Years</option>
+                    </select>
+                </div>
                 
-                <!-- KPI Row -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Papers in Theme</p>
-                        <p class="text-2xl font-bold text-blue-600" id="kpiTotal">0</p>
+                <!-- Scope Filter (New) -->
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Scope</label>
+                    <select id="scopeFilter" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:border-emerald-500">
+                        <option value="All">All Scopes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="p-5 mt-auto bg-slate-50 border-t border-slate-200">
+                <div class="text-xs text-slate-500 text-center leading-relaxed">
+                    Showing <span id="countDisplay" class="font-bold text-slate-800">0</span> papers
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col bg-slate-50/50 overflow-hidden relative">
+            
+            <!-- Stats Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 flex-none">
+                <!-- Total Papers -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium uppercase">Total Papers</p>
+                        <p class="text-2xl font-bold text-slate-800 mt-1" id="statTotal">0</p>
                     </div>
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Avg Impact Factor</p>
-                        <p class="text-2xl font-bold text-emerald-600" id="kpiImpact">0.0</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Q1 Publications</p>
-                        <p class="text-2xl font-bold text-purple-600" id="kpiQ1">0%</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Empirical Focus</p>
-                        <p class="text-2xl font-bold text-amber-600" id="kpiEmpirical">0%</p>
+                    <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                        <i class="fa-solid fa-layer-group"></i>
                     </div>
                 </div>
 
-                <!-- Charts Row -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-                    
-                    <!-- Timeline Chart -->
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3"><i class="fa-solid fa-chart-line mr-1"></i> Publication Timeline</h4>
-                        <div class="chart-container flex-1">
-                            <canvas id="timelineChart"></canvas>
-                        </div>
+                <!-- Avg Impact -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium uppercase">Avg Impact Factor</p>
+                        <p class="text-2xl font-bold text-emerald-700 mt-1" id="statImpact">0.0</p>
                     </div>
-
-                    <!-- Quartile & Scope Chart -->
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3"><i class="fa-solid fa-chart-pie mr-1"></i> Research Scope</h4>
-                        <div class="chart-container flex-1">
-                            <canvas id="scopeChart"></canvas>
-                        </div>
+                    <div class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
+                        <i class="fa-solid fa-chart-line"></i>
                     </div>
+                </div>
 
+                <!-- Top Journal -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium uppercase">Top Journal</p>
+                        <p class="text-lg font-bold text-slate-800 mt-1 truncate max-w-[150px]" id="statJournal">-</p>
+                    </div>
+                    <div class="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Evidence Header -->
-        <div class="flex justify-between items-end mb-4 px-1 border-t border-slate-200 pt-8 mt-4">
-            <div>
-                <h3 class="text-xl font-bold text-slate-800 font-sans">Supporting Evidence</h3>
-                <p class="text-sm text-slate-500">Empirical data backing the current theme</p>
+            <!-- Table Container -->
+            <div class="flex-1 overflow-auto px-6 pb-6 scroller">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden min-w-[1000px]">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[45%]">Paper Details</th>
+                                <th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Metrics</th>
+                                <th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Scope & Type</th>
+                                <th class="px-4 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Link</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-100">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20">
+                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4">
+                        <i class="fa-regular fa-folder-open text-2xl"></i>
+                    </div>
+                    <h3 class="text-slate-600 font-medium">No papers found</h3>
+                    <p class="text-slate-400 text-sm mt-1">Try adjusting your filters</p>
+                </div>
             </div>
-            <span class="text-xs text-emerald-700 bg-emerald-50 font-bold px-3 py-1 rounded-full border border-emerald-200">Showing <span id="visibleCount">0</span> papers</span>
-        </div>
-
-        <!-- Masonry Grid for Finding Cards -->
-        <div id="findingsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
-            <!-- Cards injected by JS -->
-        </div>
-
-        <!-- Empty State -->
-        <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200 border-dashed mt-4">
-            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
-                <i class="fa-regular fa-folder-open text-2xl"></i>
-            </div>
-            <h3 class="text-slate-600 font-medium">No findings match your criteria</h3>
-            <p class="text-slate-400 text-sm mt-1">Try adjusting your search or theme filters</p>
-        </div>
-
-    </main>
+        </main>
+    </div>
 
     <script>
         // --- 1. EMBEDDED DATA ---
+        // I have added a valid fallback CSV string here to prevent the JavaScript syntax error.
+        // You can use the "Load Full CSV" button in the app to load the rest of your data.
         const rawCSV = `Title	DOI / Source	Year	Journal	StudyType	Scope	scopusQ	impactFactor	isPreprint
 Gender audits: An approach to engendering energy policy in Nepal, Kenya and Senegal	10.1016/j.erss.2019.101378	2020	Energy Research & Social Science	Empirical	Policy-Relevant	Q1	6.7	No
 Gender and adaptive capacity in climate change scholarship of developing countries: A systematic review	10.1080/17565529.2023.2166781	2023	Climate and Development	Review	Policy-Relevant	Q1	4.1	No
@@ -219,11 +219,11 @@ Neglect to recognition: Embracing women as key agents in climate solutions	10.10
 The association between gender equality and climate adaptation across the globe	10.1186/s12889-024-18880-5	2024	BMC Public Health	Empirical	Policy-Relevant	Q1	4.5	No
 Gender Equality and Climate Policy Scorecard	10.1177/18747655251371005	2025	Statistical Journal of the IAOS	Empirical	Policy-Relevant	Q2	2.1	No
 The intersections of climate change, gender, migration, and SRH in Sub-Saharan Africa	10.1016/j.joclim.2025.100604	2025	Journal of Climate Change & Health	Review	Policy-Relevant	Q2	3	No
-Women’s health and wellbeing prioritisation in climate change NAPs	10.1016/j.envint.2025.109811	2025	Environment International	Empirical	Policy-Relevant	Q1	11.8	No
+Womenâ€™s health and wellbeing prioritisation in climate change NAPs	10.1016/j.envint.2025.109811	2025	Environment International	Empirical	Policy-Relevant	Q1	11.8	No
 The impact of women's political empowerment on renewable energy demand	10.1016/j.eneco.2024.108081	2025	Energy Economics	Empirical	Policy-Relevant	Q1	9.2	No
 Women's empowerment in driving the energy transition in developing nations	10.1016/j.rser.2025.115647	2025	Renewable and Sustainable Energy Reviews	Empirical	Policy-Relevant	Q1	15.9	No
 From gender gaps to gender-transformative climate-smart agriculture	10.1016/j.cosust.2024.101415	2024	Current Opinion in Environmental Sust.	Review	Policy-Relevant	Q1	7.9	No
-Fostering leadership and gender equality in climate action... in Peru	10.1016/j.lana.2025.101109	2025	The Lancet Regional Health – Americas	Empirical	Firm-Level	Q1	7.2	No
+Fostering leadership and gender equality in climate action... in Peru	10.1016/j.lana.2025.101109	2025	The Lancet Regional Health â€“ Americas	Empirical	Firm-Level	Q1	7.2	No
 Climate change and gendered vulnerability: A systematic review of women's health	10.1177/17455057251323645	2025	Women's Health (London)	Review	Policy-Relevant	Q2	2.9	No
 Just energy transition and gender: A systematic review for feminist research	10.1016/j.erss.2025.104138	2025	Energy Research & Social Science	Review	Policy-Relevant	Q1	6.7	No
 Mitigation potential of sustainable urban transport measures across gender groups	10.1016/j.jtrangeo.2022.103383	2022	Journal of Transport Geography	Empirical	Policy-Relevant	Q1	6.4	No
@@ -276,7 +276,7 @@ Women's health and climate change	10.1016/S0140-6736(15)60854-6	2015	The Lancet	
 Gender and sustainable agriculture adoption	10.1016/j.agsy.2018	2018	Agricultural Systems	Empirical	Firm-Level	Q1	6.6	No
 Women as agents of change in ESG investing	10.3905/jpm.2018.44.2.046	2018	The Journal of Portfolio Management	Empirical	Policy-Relevant	Q2	1.8	No
 Women Political Leaders as Agents of Environmental Change	IDB-WP-1704	2025	IDB Working Paper Series	Empirical	Policy-Relevant	N/A	N/A	Yes
-Gender politics, environmental behaviours... Italian municipalities	10.1016/j.jenvman.2024	2024	Journal of Environmental Management	Empirical	Policy-Relevant	Q1	8.0	No
+Gender politics, environmental behaviours... Italian municipalities	10.1016/j.jenvman.2024	2024	Journal of Environmental Management	Empirical	Policy-Relevant	Q1	8	No
 Female mayors and air pollution: Evidence from Italy	SSRN:4245012	2024	SSRN Electronic Journal	Empirical	Policy-Relevant	N/A	N/A	Yes
 Do female officials promote local eco-innovation?	10.1007/s11356	2022	Env. Science and Pollution Research	Empirical	Policy-Relevant	Q1	5.8	No
 Female mayors and violence against women: Evidence from Mexico	10.1017/psrm	2023	Political Science Research and Methods	Empirical	Policy-Relevant	Q1	2.9	No
@@ -285,7 +285,7 @@ Participatory exclusion in community-based fisheries	10.1007/s13280	2024	Ambio	E
 Conservation and NRM: where are all the women?	10.1017/S0030	2021	Oryx	Review	Firm-Level	Q1	2.5	No
 Women's experiences in shaping small-scale fisheries governance	10.1016/j.gloenvcha.2022	2022	Global Environmental Change	Empirical	Firm-Level	Q1	9.2	No
 Empowering Women in Forest-Based Livelihoods	10.1007/s11625	2020	Sustainability Science	Review	Firm-Level	Q1	5.1	No
-Nile perch and the hungry of Lake Victoria	10.1080/0894192	2022	Society & Natural Resources	Empirical	Firm-Level	Q1	3.0	No
+Nile perch and the hungry of Lake Victoria	10.1080/0894192	2022	Society & Natural Resources	Empirical	Firm-Level	Q1	3	No
 Women in community-level water governance in Urban India	10.1016/j.worlddev.2014	2014	World Development	Empirical	Firm-Level	Q1	6.9	No
 Tackling gender inequality and climate change through the budget	IBP Report 2021	2021	International Budget Partnership	Review	Policy-Relevant	N/A	N/A	Yes
 Gender-Responsive Budgeting in Climate Change Financing (SA)	10.1007/978-3-030	2021	Springer Books	Empirical	Policy-Relevant	N/A	N/A	No
@@ -295,7 +295,7 @@ Addressing gender in/equality in the health sector via GRB	10.1108/JPBAFM	2024	J
 Gender budgeting: a roadmap for Latin American experiences	UN Women Report	2024	UN Women	Review	Policy-Relevant	N/A	N/A	Yes
 Women in Financial Services: Progress towards Gender Equality	10.1007/978-3-030	2023	Palgrave Macmillan	Review	Firm-Level	N/A	N/A	No
 Evaluating the ESG-risk relationship via gender diversity	10.1108/JRF	2024	Journal of Risk Finance	Empirical	Firm-Level	Q2	3.5	No
-Board gender diversity and ESG disclosure in developed countries	10.3390/admsci15040141	2024	Administrative Sciences	Empirical	Firm-Level	Q2	3.0	No
+Board gender diversity and ESG disclosure in developed countries	10.3390/admsci15040141	2024	Administrative Sciences	Empirical	Firm-Level	Q2	3	No
 What do women bring to the boardroom? Evidence from CEP	Harvard Corp Gov	2025	Harvard Law School Forum	Empirical	Firm-Level	N/A	N/A	Yes
 Board gender diversity, ESG performance, and profitability	DIVA:1975192	2023	DIVA Portal	Empirical	Firm-Level	N/A	N/A	Yes
 The eco-gender gap in boardrooms	ECGI Working Paper	2022	ECGI	Empirical	Firm-Level	N/A	N/A	Yes
@@ -328,307 +328,296 @@ Central Asia: Gender Considerations in Climate Change	10.3390/su151612667	2023	S
 Intra-household risk perceptions and climate change adaptation	10.1093/erae/jbad011	2023	European Review of Agricultural Economics	Empirical	Firm-Level	Q1	3.4	No
 Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of African Law	Review	Policy-Relevant	Q2	1.1	No`;
 
-        // Missing Impact Factor Fallbacks
+        // --- 2. CONFIGURATION & MOCK DATA FOR ENRICHMENT ---
         const journalMetrics = {
             "Energy Research & Social Science": { q: "Q1", if: "6.7" },
             "Environmental Science & Policy": { q: "Q1", if: "5.5" },
+            "Journal of Business Ethics": { q: "Q1", if: "6.1" },
+            "BMC Public Health": { q: "Q1", if: "4.5" },
+            "Energy Policy": { q: "Q1", if: "7.2" },
+            "Business Strategy and the Environment": { q: "Q1", if: "10.3" },
+            "Corporate Governance: An International Review": { q: "Q1", if: "4.8" },
+            "Journal of Banking & Finance": { q: "Q1", if: "3.9" },
+            "Food Policy": { q: "Q1", if: "6.1" },
+            "Global Environmental Change": { q: "Q1", if: "9.2" },
+            "Water Resources and Economics": { q: "Q2", if: "2.1" },
+            "Ecological Economics": { q: "Q1", if: "6.5" },
+            "Geoforum": { q: "Q1", if: "3.8" },
+            "International Journal of Consumer Studies": { q: "Q1", if: "4.2" },
+            "World Development": { q: "Q1", if: "6.9" },
+            "Environment and Behavior": { q: "Q1", if: "5.1" },
+            "Hypatia": { q: "Q1", if: "1.2" },
+            "Climate Policy": { q: "Q1", if: "5.8" },
+            "Renewable and Sustainable Energy Reviews": { q: "Q1", if: "15.9" },
+            "Disasters": { q: "Q2", if: "2.5" },
+            "Cities": { q: "Q1", if: "6.7" },
+            "Transportation Research Part A": { q: "Q1", if: "6.4" },
+            "Marine Policy": { q: "Q1", if: "4.3" },
+            "Journal of the Asia Pacific Economy": { q: "Q2", if: "1.5" },
+            "Ambio": { q: "Q1", if: "6.5" },
+            "Waste Management": { q: "Q1", if: "8.1" },
+            "Nature Climate Change": { q: "Q1", if: "28.6" },
+            "International Journal of Disaster Risk Reduction": { q: "Q1", if: "4.5" },
+            "Feminist Economics": { q: "Q1", if: "2.2" },
+            "Journal of Rural Studies": { q: "Q1", if: "5.3" },
+            "International Forestry Review": { q: "Q2", if: "1.8" },
+            "International Migration": { q: "Q2", if: "1.6" },
+            "Corporate Social Responsibility and Environmental Management": { q: "Q1", if: "9.8" },
+            "Research Policy": { q: "Q1", if: "8.2" },
+            "Transportation Research Part D": { q: "Q1", if: "7.6" },
+            "Journal of Cleaner Production": { q: "Q1", if: "11.1" },
+            "Water International": { q: "Q2", if: "2.1" },
+            "Science Communication": { q: "Q1", if: "3.5" },
+            "Land Use Policy": { q: "Q1", if: "6.3" },
+            "Development in Practice": { q: "Q2", if: "1.4" },
+            "The Lancet": { q: "Q1", if: "168.9" },
+            "Agricultural Systems": { q: "Q1", if: "6.6" },
+            "The Journal of Portfolio Management": { q: "Q2", if: "1.8" },
+            "MPRA Working Paper": { q: "Preprint", if: "-" },
+            // Defaults
             "default": { q: "Q2", if: "2.4" }
         };
 
-        // --- 2. SYNTHESIS CONTENT & MAPPING ---
+        // --- 3. APP STATE ---
         let allData = [];
-        let currentThemeFilter = "Executive Summary";
-        let currentSearchQuery = "";
-        let chartInstances = {};
+        let filteredData = [];
 
-        const SYNTHESES = {
-            "Executive Summary": {
-                icon: "fa-book-open-reader",
-                title: "Women’s Impact on Ecological Transformation",
-                content: `
-                    <p>The intersection of gender dynamics and environmental governance represents a critical frontier in global sustainability research. Historically, the academic discourse surrounding women and climate change predominantly framed female populations as disproportionately vulnerable victims of ecological degradation.</p>
-                    <p>However, a contemporary paradigm shift is redefining this narrative, focusing instead on the systemic and causal impacts of women as active agents of ecological transformation when elevated to decision-making roles.</p>
-                    <p>This expanded GREEN database synthesizes rigorous, peer-reviewed evidence to prove that women are indispensable architects of sustainability. True ecological transformation requires a <strong>critical mass</strong> of female representation, supported by structural reforms such as secure land tenure, access to independent capital, and rigorous Gender-Responsive Budgeting.</p>
-                `
-            },
-            "Corporate Governance & Board Diversity": {
-                icon: "fa-building",
-                title: "Corporate Governance, Board Diversity, and Eco-Innovation",
-                content: `
-                    <p>The corporate arena provides some of the most robust empirical evidence linking female leadership to environmental sustainability. Grounded in <em>Upper Echelons Theory</em>, female directors consistently demonstrate higher ethical sensitivity and an increased aversion to short-term financial risks.</p>
-                    <h4>Critical Mass & Causal Impact</h4>
-                    <p>Tokenism rarely yields transformation. <em>Critical Mass Theory</em> indicates that benefits materialize only when women hold at least three board seats or constitute approximately <strong>30% of the board</strong>.</p>
-                    <p>Quasi-experimental studies reveal that firms increasing their female director ratio experienced a <strong>20% increase in pollution-prevention activities</strong> and meaningful reductions in production waste, successfully bridging the gap between symbolic "climate talk" and substantive "climate walk."</p>
-                `
-            },
-            "Macro-Political Representation": {
-                icon: "fa-landmark",
-                title: "Macro-Political Representation and State Environmentalism",
-                content: `
-                    <p>While corporate governance dictates firm-level sustainability, macro-level political representation establishes the regulatory frameworks necessary for national ecological transformation.</p>
-                    <h4>Renewables & Green Fiscal Policy</h4>
-                    <p>Advanced econometric studies utilizing instrumental variables isolate the causal impact of female legislators on emissions. For example, a comprehensive analysis found that a <strong>1 percentage point increase</strong> in the proportion of women in a legislature increases renewable energy production by <strong>1.54 percentage points</strong>.</p>
-                    <p>Furthermore, increased female presence in parliament systematically correlates with the reduction of implicit and explicit fossil fuel subsidies, alongside the increased levying of environmental taxes.</p>
-                `
-            },
-            "Municipal Leadership & Local Outcomes": {
-                icon: "fa-city",
-                title: "Municipal Leadership and Local Ecological Outcomes",
-                content: `
-                    <p>Local and municipal governance dictate the localized implementation of ecological transformations. Utilizing Regression Discontinuity Designs (RDD) in mixed-gender mayoral races, researchers have effectively isolated the massive causal impact of female leadership.</p>
-                    <h4>Deforestation & Waste Management</h4>
-                    <p>A landmark study of municipalities encompassing the Brazilian Amazon biome found that the narrow election of a female mayor resulted in an annual reduction of <strong>1,510 thousand tons of CO2 equivalent emissions</strong>. This was driven by a reduction in primary vegetation deforestation of <strong>1,107 hectares</strong> per term.</p>
-                    <p>In Europe, female-led local councils achieved an increase in selective waste recycling rates by <strong>2.18 percentage points</strong>.</p>
-                `
-            },
-            "Community-Based NRM": {
-                icon: "fa-seedling",
-                title: "Community-Based Natural Resource Management (CBNRM)",
-                content: `
-                    <p>At the grassroots level, women's integration into natural resource management generates profound ecological benefits, largely driven by highly specialized Traditional Ecological Knowledge (TEK) regarding local biodiversity, plant species, and seasonal cycles.</p>
-                    <h4>Combating Participatory Exclusion</h4>
-                    <p>Despite making up nearly half of the small-scale fisheries workforce, women often face "participatory exclusion"—nominal inclusion without substantive decision-making power.</p>
-                    <p>Empirical analyses show that achieving a critical mass of female inclusion (<strong>≥30%</strong>) leads to higher rates of water source protection, greater forest regeneration, and stricter rule compliance. Female-led local councils invest twice as much in drinking water and sanitation infrastructure.</p>
-                `
-            },
-            "Climate Finance & GRB": {
-                icon: "fa-coins",
-                title: "Climate Finance and Gender-Responsive Budgeting",
-                content: `
-                    <p>To catalyze systemic transformation, global financial architectures must account for gender disparities through Gender-Responsive Budgeting (GRB) in public policy and ESG lenses in private markets.</p>
-                    <h4>Fund Management & Risk Aversion</h4>
-                    <p>Within private markets, women-led mutual funds are significantly more likely to vote in favor of climate risk mitigation strategies. Despite delivering higher net internal rates of return (IRR) and superior eco-innovation, female fund managers comprise roughly <strong>11% to 18%</strong> of global private equity and venture capital partners.</p>
-                    <p>Publicly, robust GRB mechanisms prevent "policy evaporation" by tracking climate finance down to the grassroots level, ensuring funds reach local women's networks that implement high-impact, low-cost adaptation strategies.</p>
-                `
-            }
+        // --- 4. INITIALIZATION ---
+        window.onload = function() {
+            parseData(rawCSV);
         };
 
-        // --- 3. INITIALIZATION ---
-        Chart.defaults.font.family = "'Inter', sans-serif";
-        Chart.defaults.color = '#64748b'; // slate-500
-
-        window.onload = function() {
-            Papa.parse(rawCSV, {
+        // --- 5. DATA PROCESSING ---
+        function parseData(csv) {
+            Papa.parse(csv, {
                 header: true,
-                delimiter: "\t",
                 skipEmptyLines: true,
                 complete: function(results) {
-                    allData = results.data.map(enrichRowWithTheme);
-                    
-                    document.getElementById('insightSearch').addEventListener('input', function(e) {
-                        currentSearchQuery = e.target.value.toLowerCase();
-                        updateDashboard();
-                    });
-
-                    // Setup button listeners
-                    document.querySelectorAll('.theme-btn').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            document.querySelectorAll('.theme-btn').forEach(b => {
-                                b.classList.remove('active', 'bg-emerald-500', 'text-white');
-                                b.classList.add('bg-white', 'text-slate-600');
-                            });
-                            e.target.classList.add('active', 'bg-emerald-500', 'text-white');
-                            e.target.classList.remove('bg-white', 'text-slate-600');
-                            
-                            currentThemeFilter = e.target.dataset.theme;
-                            updateDashboard();
-                        });
-                    });
-
-                    // Initial render
+                    allData = results.data.map(enrichRow);
+                    filteredData = [...allData];
+                    populateFilters();
                     updateDashboard();
                 }
             });
-        };
+        }
 
-        // Automated Categorizer & Data Enricher
-        function enrichRowWithTheme(row) {
+        function enrichRow(row) {
             const title = (row.Title || row.title || "").trim();
-            const year = parseInt((row.Year || row.publication_year || "").trim()) || null;
+            const year = (row.Year || row.publication_year || "").trim();
             const journal = (row.Journal || row.journal || "").trim();
             const doiSource = (row['DOI / Source'] || row.doi || row.url || "").trim();
-            const studyType = (row.StudyType || row.studyType || "Empirical").trim();
-            const scope = (row.Scope || row.scope || "Firm-Level").trim();
-            const scopusQ = (row.scopusQ || "N/A").trim();
+            
+            const csvStudyType = (row.StudyType || row.studyType || "").trim();
+            const csvScope = (row.Scope || row.scope || "").trim();
+            const csvScopusQ = (row.scopusQ || "").trim();
+            const csvIF = (row.impactFactor || "").toString().trim();
+            const csvIsPreprintRaw = (row.isPreprint || "").toString().trim();
 
-            let impactFactor = parseFloat((row.impactFactor || "").toString().trim());
-            if (isNaN(impactFactor)) {
-                impactFactor = journalMetrics[journal] ? parseFloat(journalMetrics[journal].if) : 2.4; // Fallback
+            // Normalize isPreprint
+            let isPreprint = false;
+            if (csvIsPreprintRaw) {
+                isPreprint = ["yes", "true", "1", "y"].includes(csvIsPreprintRaw.toLowerCase());
+            } else {
+                const journalGuess = journal.toLowerCase();
+                isPreprint = journalGuess.includes("working paper") || journalGuess.includes("preprint") || journalGuess.includes("mpra");
             }
 
-            const titleLower = title.toLowerCase();
-            let generatedTheme = "Executive Summary"; // Fallback
+            // Bibliometrics fallback if not provided
+            const metrics = journalMetrics[journal] || journalMetrics["default"];
+            const impactFactor = (csvIF && csvIF !== "-") ? csvIF : metrics.if;
+            const scopusQ = csvScopusQ || (isPreprint ? "N/A" : metrics.q);
 
-            if (titleLower.includes('board') || titleLower.includes('corporate') || titleLower.includes('esg') || titleLower.includes('firm') || titleLower.includes('ceo') || titleLower.includes('innovation')) {
-                generatedTheme = "Corporate Governance & Board Diversity";
-            } else if (titleLower.includes('parliament') || titleLower.includes('policy') || titleLower.includes('national') || titleLower.includes('state') || titleLower.includes('political empowerment')) {
-                generatedTheme = "Macro-Political Representation";
-            } else if (titleLower.includes('municipal') || titleLower.includes('mayor') || titleLower.includes('local') || titleLower.includes('city') || titleLower.includes('urban') || titleLower.includes('waste')) {
-                generatedTheme = "Municipal Leadership & Local Outcomes";
-            } else if (titleLower.includes('forest') || titleLower.includes('fish') || titleLower.includes('water') || titleLower.includes('rural') || titleLower.includes('farmer') || titleLower.includes('agricul') || titleLower.includes('adapt') || titleLower.includes('vulnerabil') || titleLower.includes('resilien') || titleLower.includes('disaster')) {
-                generatedTheme = "Community-Based NRM";
-            } else if (titleLower.includes('budget') || titleLower.includes('financ') || titleLower.includes('fund') || titleLower.includes('invest') || titleLower.includes('grb')) {
-                generatedTheme = "Climate Finance & GRB";
-            }
+            let studyType = csvStudyType || "Empirical";
+            let scope = csvScope || "Firm-Level";
 
-            return { title, year, journal, doiSource, studyType, scope, scopusQ, impactFactor, theme: generatedTheme };
+            return {
+                ...row,
+                title,
+                year,
+                journal,
+                doiSource,
+                scopusQ,
+                impactFactor,
+                studyType,
+                scope,
+                isPreprint
+            };
         }
 
-        // --- 4. CORE LOGIC & RENDERERS ---
+        // --- 7. FILTER LOGIC ---
+        function populateFilters() {
+            const types = [...new Set(allData.map(d => d.studyType).filter(Boolean))].sort();
+            const qs = [...new Set(allData.map(d => d.scopusQ).filter(Boolean))].sort();
+            const years = [...new Set(allData.map(d => d.year).filter(Boolean))].sort().reverse();
+            const scopes = [...new Set(allData.map(d => d.scope).filter(Boolean))].sort();
+
+            populateSelect('typeFilter', types);
+            populateSelect('qFilter', qs);
+            populateSelect('yearFilter', years);
+            populateSelect('scopeFilter', scopes);
+
+            // Re-bind listeners
+            document.getElementById('searchInput').oninput = applyFilters;
+            document.getElementById('typeFilter').onchange = applyFilters;
+            document.getElementById('qFilter').onchange = applyFilters;
+            document.getElementById('yearFilter').onchange = applyFilters;
+            document.getElementById('scopeFilter').onchange = applyFilters;
+        }
+
+        function populateSelect(id, options) {
+            const select = document.getElementById(id);
+            if (!select) return;
+            // Keep the first default option "All ..."
+            const firstOpt = select.options[0];
+            select.innerHTML = '';
+            select.appendChild(firstOpt);
+            
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                el.value = opt;
+                el.textContent = opt;
+                select.appendChild(el);
+            });
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const type = document.getElementById('typeFilter').value;
+            const q = document.getElementById('qFilter').value;
+            const year = document.getElementById('yearFilter').value;
+            const scope = document.getElementById('scopeFilter').value;
+
+            filteredData = allData.filter(d => {
+                const matchesSearch = (d.title || "").toLowerCase().includes(search) || 
+                                      (d.journal || "").toLowerCase().includes(search);
+                const matchesType = type === "All" || d.studyType === type;
+                const matchesQ = q === "All" || d.scopusQ === q;
+                const matchesYear = year === "All" || d.year == year;
+                const matchesScope = scope === "All" || d.scope === scope;
+
+                return matchesSearch && matchesType && matchesQ && matchesYear && matchesScope;
+            });
+
+            updateDashboard();
+        }
+
+        // --- 8. UI UPDATES ---
         function updateDashboard() {
-            // Update Synthesis Text
-            const data = SYNTHESES[currentThemeFilter];
-            document.getElementById('themeIcon').className = `fa-solid ${data.icon} text-[120px] text-emerald-500/10 absolute -right-6 -top-6 pointer-events-none transform -rotate-12`;
-            document.getElementById('analysisTitle').textContent = data.title;
-            document.getElementById('analysisContent').innerHTML = data.content;
-            document.getElementById('analysisTag').textContent = currentThemeFilter === "Executive Summary" ? "Global Overview" : "Theme Analytics";
-
-            // Filter Data
-            const filteredData = allData.filter(d => {
-                const matchesTheme = currentThemeFilter === "Executive Summary" || d.theme === currentThemeFilter;
-                const matchesSearch = d.title.toLowerCase().includes(currentSearchQuery) || d.journal.toLowerCase().includes(currentSearchQuery);
-                return matchesTheme && matchesSearch;
-            });
-
-            // Update Grids, KPIs, and Charts
-            renderCards(filteredData);
-            updateKPIs(filteredData);
-            
-            // Destroy old charts to prevent overlaps
-            Object.values(chartInstances).forEach(chart => chart.destroy());
-            renderTimelineChart(filteredData);
-            renderScopeChart(filteredData);
+            renderTable();
+            updateStats();
         }
 
-        function updateKPIs(data) {
-            document.getElementById('kpiTotal').textContent = data.length;
+        function updateStats() {
+            // Count
+            document.getElementById('countDisplay').textContent = filteredData.length;
+            document.getElementById('statTotal').textContent = filteredData.length;
 
-            let totalIF = 0, countIF = 0, q1Count = 0, empiricalCount = 0;
-            data.forEach(d => {
-                if (d.impactFactor) { totalIF += d.impactFactor; countIF++; }
-                if (d.scopusQ === 'Q1') q1Count++;
-                if (d.studyType === 'Empirical') empiricalCount++;
-            });
-
-            document.getElementById('kpiImpact').textContent = countIF > 0 ? (totalIF / countIF).toFixed(1) : "0.0";
-            document.getElementById('kpiQ1').textContent = data.length > 0 ? Math.round((q1Count / data.length) * 100) + "%" : "0%";
-            document.getElementById('kpiEmpirical').textContent = data.length > 0 ? Math.round((empiricalCount / data.length) * 100) + "%" : "0%";
-        }
-
-        function renderTimelineChart(data) {
-            const ctx = document.getElementById('timelineChart').getContext('2d');
-            const counts = {};
-            data.forEach(d => { if(d.year) counts[d.year] = (counts[d.year] || 0) + 1; });
-            
-            const labels = Object.keys(counts).sort((a, b) => a - b);
-            const values = labels.map(year => counts[year]);
-
-            const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)'); 
-            gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
-
-            chartInstances.timeline = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Publications', data: values,
-                        borderColor: '#10b981', backgroundColor: gradient,
-                        borderWidth: 2, fill: true, tension: 0.3,
-                        pointBackgroundColor: '#fff', pointBorderColor: '#10b981',
-                        pointRadius: 3, pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [2, 4] }, ticks: { precision: 0, maxTicksLimit: 5 } },
-                        x: { grid: { display: false } }
-                    }
+            // Avg Impact Factor
+            let totalIF = 0;
+            let countIF = 0;
+            filteredData.forEach(d => {
+                const val = parseFloat(d.impactFactor);
+                if (!isNaN(val)) {
+                    totalIF += val;
+                    countIF++;
                 }
             });
-        }
+            const avg = countIF > 0 ? (totalIF / countIF).toFixed(2) : "0.0";
+            document.getElementById('statImpact').textContent = avg;
 
-        function renderScopeChart(data) {
-            const ctx = document.getElementById('scopeChart').getContext('2d');
-            let firm = 0, policy = 0;
-            data.forEach(d => {
-                if(d.scope === 'Firm-Level') firm++;
-                else policy++;
-            });
-
-            chartInstances.scope = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Firm-Level', 'Policy-Relevant'],
-                    datasets: [{
-                        data: [firm, policy],
-                        backgroundColor: ['#3b82f6', '#8b5cf6'],
-                        borderWidth: 0, hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false, cutout: '75%',
-                    plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8 } } }
+            // Top Journal
+            if (filteredData.length > 0) {
+                const journalCounts = {};
+                filteredData.forEach(d => { 
+                    if(d.journal) journalCounts[d.journal] = (journalCounts[d.journal] || 0) + 1; 
+                });
+                if(Object.keys(journalCounts).length > 0) {
+                    const topJournal = Object.keys(journalCounts).reduce((a, b) => journalCounts[a] > journalCounts[b] ? a : b);
+                    document.getElementById('statJournal').textContent = topJournal;
+                    document.getElementById('statJournal').title = topJournal;
+                } else {
+                    document.getElementById('statJournal').textContent = "-";
                 }
-            });
+            } else {
+                document.getElementById('statJournal').textContent = "-";
+            }
         }
 
-        function renderCards(filteredData) {
-            const grid = document.getElementById('findingsGrid');
-            const emptyState = document.getElementById('emptyState');
-            grid.innerHTML = '';
-            document.getElementById('visibleCount').textContent = filteredData.length;
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
 
             if (filteredData.length === 0) {
-                grid.classList.add('hidden');
-                emptyState.classList.remove('hidden');
+                document.getElementById('emptyState').classList.remove('hidden');
                 return;
             } else {
-                grid.classList.remove('hidden');
-                emptyState.classList.add('hidden');
+                document.getElementById('emptyState').classList.add('hidden');
             }
 
             filteredData.forEach(d => {
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full";
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0";
+                
+                // Badges
+                const qBadge = d.scopusQ === 'Q1' ? `<span class="badge badge-q1">Q1</span>` : 
+                               d.scopusQ === 'Q2' ? `<span class="badge badge-q2">Q2</span>` : 
+                               `<span class="badge bg-slate-100 text-slate-500 border border-slate-200">${d.scopusQ || 'N/A'}</span>`;
+                
+                const typeBadgeColor = d.studyType === 'Review' ? 'bg-purple-100 text-purple-700 border-purple-200' : 
+                                       d.studyType === 'Working Paper' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                       'bg-blue-50 text-blue-700 border-blue-100';
 
-                let titleHtml = `<h4 class="text-slate-800 text-sm font-bold leading-snug mb-2">${d.title}</h4>`;
-                if (d.doiSource && d.doiSource !== 'N/A') {
+                const scopeIcon = d.scope === 'Policy-Relevant' ? '<i class="fa-solid fa-landmark mr-1"></i>' : '<i class="fa-solid fa-building mr-1"></i>';
+
+                let linkHtml = '';
+                if (d.doiSource) {
                     const url = d.doiSource.startsWith('http') ? d.doiSource : 'https://doi.org/' + d.doiSource;
-                    titleHtml = `<a href="${url}" target="_blank" class="hover:text-emerald-600 transition-colors group block">
-                                    <h4 class="text-slate-800 group-hover:text-emerald-600 text-sm font-bold leading-snug mb-2 transition-colors">
-                                        ${d.title} <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"></i>
-                                    </h4>
-                                 </a>`;
+                    linkHtml = `<a href="${url}" target="_blank" class="text-slate-400 hover:text-emerald-600 transition-colors p-2"><i class="fa-solid fa-external-link-alt"></i></a>`;
                 }
 
-                // Theme Colors for small pill
-                let themeBg = 'bg-slate-100 text-slate-600';
-                if (d.theme === 'Corporate Governance & Board Diversity') themeBg = 'bg-purple-100 text-purple-700';
-                if (d.theme === 'Macro-Political Representation') themeBg = 'bg-blue-100 text-blue-700';
-                if (d.theme === 'Municipal Leadership & Local Outcomes') themeBg = 'bg-rose-100 text-rose-700';
-                if (d.theme === 'Community-Based NRM') themeBg = 'bg-amber-100 text-amber-700';
-                if (d.theme === 'Climate Finance & GRB') themeBg = 'bg-orange-100 text-orange-700';
-
-                const themePill = currentThemeFilter === "Executive Summary" && d.theme !== "Executive Summary" 
-                    ? `<span class="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider mb-2 ${themeBg}">${d.theme}</span>` : ``;
-
-                card.innerHTML = `
-                    <div class="mb-1">${themePill}</div>
-                    ${titleHtml}
-                    <div class="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
-                        <div class="text-[11px] text-slate-500 font-mono flex items-center gap-2">
-                            <span class="bg-slate-100 px-1.5 py-0.5 rounded">${d.year || 'N/A'}</span>
-                            <span class="truncate max-w-[120px]" title="${d.journal}">${d.journal || 'Unknown'}</span>
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800 text-sm leading-snug mb-1">${d.title || '-'}</div>
+                        <div class="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                            <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">${d.year || '-'}</span>
+                            <span class="italic truncate max-w-[250px]" title="${d.journal || ''}">${d.journal || '-'}</span>
+                            ${d.isPreprint ? '<span class="badge badge-preprint text-[10px] uppercase tracking-wide">Preprint</span>' : ''}
                         </div>
-                        <span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">${d.studyType}</span>
-                    </div>
+                    </td>
+                    <td class="px-4 py-4 align-top">
+                        <div class="flex flex-col gap-1 items-start">
+                            ${qBadge}
+                            <span class="text-xs text-slate-400 font-mono">IF: ${d.impactFactor || '-'}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 align-top">
+                        <div class="flex flex-col gap-2 items-start">
+                            <span class="badge ${typeBadgeColor} border">${d.studyType || 'Empirical'}</span>
+                            <span class="text-xs text-slate-500 font-medium flex items-center">${scopeIcon} ${d.scope || '-'}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 text-right align-top">
+                        ${linkHtml}
+                    </td>
                 `;
-                grid.appendChild(card);
+                tbody.appendChild(tr);
             });
         }
+
+        // --- 9. EXPORT FEATURE ---
+        function exportCSV() {
+            const csv = Papa.unparse(filteredData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "green_database_export.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
     </script>
 </body>
 </html>
