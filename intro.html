@@ -52,7 +52,7 @@
                 </div>
                 <h1 class="text-xl font-bold text-slate-800 tracking-tight font-sans">
                     Thematic Analytics 
-                    <span class="text-slate-400 font-medium text-sm ml-2 hidden sm:inline">| Key Conclusions & Data</span>
+                    <span class="text-slate-400 font-medium text-sm ml-2 hidden sm:inline">What does the data tell us?</span>
                 </h1>
             </div>
             
@@ -65,7 +65,7 @@
         
         <!-- Header -->
         <div class="mb-6 ml-2">
-            <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Data-Driven Synthesis</h2>
+            <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Synthesis</h2>
             <p class="text-slate-500 mt-2 max-w-4xl leading-relaxed">
                 Interact with the themes below to instantly filter the qualitative conclusions, performance KPIs, and graphical trends for that specific governance arena.
             </p>
@@ -194,7 +194,7 @@
 
     </main>
 
-    <!-- Ask the Data Chatbot UI -->
+    <!-- ✨ Ask the Data Chatbot UI -->
     <button onclick="toggleChat()" class="fixed bottom-6 right-6 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all z-50 flex items-center gap-2 group">
         <i class="fa-solid fa-sparkles text-xl group-hover:scale-110 transition-transform"></i>
         <span class="font-semibold hidden md:block pr-2">Ask the Data</span>
@@ -208,7 +208,7 @@
         <div id="chatLog" class="flex-1 p-4 h-[350px] overflow-y-auto bg-slate-50 flex flex-col gap-3 text-sm">
             <div class="text-left">
                 <span class="inline-block bg-white border border-slate-200 text-slate-700 px-3 py-2 rounded-xl max-w-[90%] shadow-sm">
-                    Hello! I'm your AI assistant. I've read the analysis for the current theme you are exploring. What would you like to know about the research?
+                    Hello! ✨ I'm your AI assistant. I've read the analysis for the current theme you are exploring. What would you like to know about the research?
                 </span>
             </div>
         </div>
@@ -242,7 +242,7 @@
                     const data = await response.json();
                     return data.candidates?.[0]?.content?.parts?.[0]?.text || "No content generated.";
                 } catch (error) {
-                    if (i === 4) return "Failed to reach Gemini API. Please try again later.";
+                    if (i === 4) return "⚠️ Failed to reach Gemini API. Please try again later.";
                     await new Promise(res => setTimeout(res, delay));
                     delay *= 2;
                 }
@@ -741,7 +741,7 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
                         </div>
                         <span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">${d.studyType}</span>
                     </div>
-                    <!-- AI Insight Button -->
+                    <!-- ✨ AI Insight Button -->
                     <button class="w-full bg-emerald-50/50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 text-[11px] font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ai-summary-btn" 
                         data-title="${d.title.replace(/"/g, '&quot;')}" 
                         data-journal="${d.journal.replace(/"/g, '&quot;')}" 
