@@ -501,6 +501,71 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
             updateDashboard();
         }
 
+  function cleanDoi(s) {
+    return (s || "")
+      .trim()
+      .replace(/^doi:\s*/i, "")
+      .replace(/\s+/g, "")
+      .replace(/[)\],.;:]+$/g, ""); // trim trailing punctuation
+  }
+
+  function isValidDoi(s) {
+    return /^10\.\d{4,9}\/\S+$/i.test(s);
+  }
+
+  function buildBestUrl(d) {
+    const raw = (d.doiSource || "").trim();
+    if (!raw) return "";
+
+    if (/^https?:\/\//i.test(raw)) return raw;
+
+    const key = raw.toLowerCase();
+
+    const ssrnMatch = raw.match(/^SSRN:(\d+)$/i);
+    if (ssrnMatch) {
+      return `https://papers.ssrn.com/sol3/papers.cfm?abstract_id=${ssrnMatch[1]}`;
+    }
+
+    const divaMatch = raw.match(/^DIVA:(\d+)$/i);
+    if (divaMatch) {
+      return `https://www.diva-portal.org/smash/record.jsf?pid=diva2:${divaMatch[1]}`;
+    }
+
+    if (key.includes("ecb") && key.includes("2650")) {
+      return "https://www.ecb.europa.eu/pub/pdf/scpwps/ecb.wp2650~3b693e6009.en.pdf";
+    }
+
+    if (key === "idb-wp-1704") {
+      return "https://publications.iadb.org/en/women-political-leaders-agents-environmental-change";
+    }
+
+    if (key.includes("ecgi working paper")) {
+      // Prefer a targeted ECGI search using the paper title
+      return `https://www.ecgi.global/search?search_api_fulltext=${encodeURIComponent(d.title || "")}`;
+    }
+
+    if (key.includes("harvard corp gov") || key.includes("corpgov")) {
+      return `https://corpgov.law.harvard.edu/?s=${encodeURIComponent(d.title || "")}`;
+    }
+      
+    if (key.includes("un women") || key.includes("ibp report")) {
+      return `https://www.google.com/search?q=${encodeURIComponent((d.title || "") + " " + raw)}`;
+    }
+
+    if (key.includes("frontiers in climate")) {
+      // Best fallback: scholar query for the title (Frontiers pages are discoverable)
+      return `https://scholar.google.com/scholar?q=${encodeURIComponent(d.title || "")}`;
+    }
+
+    const doi = cleanDoi(raw);
+    if (isValidDoi(doi)) {
+      return `https://doi.org/${doi}`;
+    }
+
+    const scholarQ = `${d.title || ""} ${d.journal || ""} ${d.year || ""}`.trim();
+    return `https://scholar.google.com/scholar?q=${encodeURIComponent(scholarQ)}`;
+  }
+
         // --- 8. UI UPDATES ---
         function updateDashboard() {
             renderTable();
