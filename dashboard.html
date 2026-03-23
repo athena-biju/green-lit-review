@@ -635,11 +635,16 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
                 const scopeIcon = d.scope === 'Policy-Relevant' ? '<i class="fa-solid fa-landmark mr-1"></i>' : '<i class="fa-solid fa-building mr-1"></i>';
 
                 let linkHtml = '';
-                if (d.doiSource) {
-                    const url = d.doiSource.startsWith('http') ? d.doiSource : 'https://doi.org/' + d.doiSource;
-                    linkHtml = `<a href="${url}" target="_blank" class="text-slate-400 hover:text-emerald-600 transition-colors p-2"><i class="fa-solid fa-external-link-alt"></i></a>`;
-                }
-
+                    const url = buildBestUrl(d);
+                    if (url) {
+                      const label = (d.doiSource || '').trim();
+                      linkHtml = `
+                        <a href="${url}" target="_blank" rel="noopener"
+                           title="${label || 'Open source'}"
+                           class="text-slate-400 hover:text-emerald-600 transition-colors p-2">
+                          <i class="fa-solid fa-external-link-alt"></i>
+                        </a>`;
+                    }
                 tr.innerHTML = `
                     <td class="px-6 py-4">
                         <div class="font-bold text-slate-800 text-sm leading-snug mb-1">${d.title || '-'}</div>
