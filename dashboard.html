@@ -413,6 +413,21 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
             const csvIF = (row.impactFactor || "").toString().trim();
             const csvIsPreprintRaw = (row.isPreprint || "").toString().trim();
 
+            function fixMojibake(s) {
+                  // quick pragmatic fix for the most common UTF-8→Latin1 mojibake
+                  if (!s) return s;
+                  return s
+                    .replace(/â€™/g, "’")
+                    .replace(/â€œ/g, "“")
+                    .replace(/â€/g, "”")
+                    .replace(/â€“/g, "–")
+                    .replace(/â€”/g, "—")
+                    .replace(/â€¦/g, "…");
+                }
+
+            const title = fixMojibake((row.Title || row.title || "").trim());
+            const journal = fixMojibake((row.Journal || row.journal || "").trim());
+
             // Normalize isPreprint
             let isPreprint = false;
             if (csvIsPreprintRaw) {
