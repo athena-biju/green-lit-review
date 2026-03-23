@@ -190,8 +190,7 @@
 
     <script>
         // --- 1. EMBEDDED DATA ---
-        // I have added a valid fallback CSV string here to prevent the JavaScript syntax error.
-        // You can use the "Load Full CSV" button in the app to load the rest of your data.
+        // You can replace this fallback CSV with your full export when ready.
         const rawCSV = `Title	DOI / Source	Year	Journal	StudyType	Scope	scopusQ	impactFactor	isPreprint
 Gender audits: An approach to engendering energy policy in Nepal, Kenya and Senegal	10.1016/j.erss.2019.101378	2020	Energy Research & Social Science	Empirical	Policy-Relevant	Q1	6.7	No
 Gender and adaptive capacity in climate change scholarship of developing countries: A systematic review	10.1080/17565529.2023.2166781	2023	Climate and Development	Review	Policy-Relevant	Q1	4.1	No
@@ -374,7 +373,6 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
             "Agricultural Systems": { q: "Q1", if: "6.6" },
             "The Journal of Portfolio Management": { q: "Q2", if: "1.8" },
             "MPRA Working Paper": { q: "Preprint", if: "-" },
-            // Defaults
             "default": { q: "Q2", if: "2.4" }
         };
 
@@ -382,12 +380,88 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
         let allData = [];
         let filteredData = [];
 
-        // --- 4. INITIALIZATION ---
+        // --- 4. HELPERS (text + link resolution) ---
+        function fixMojibake(s) {
+            // pragmatic fix for common UTF-8 → Latin1 mojibake seen in copied CSV strings
+            if (!s) return s;
+            return s
+                .replace(/â€™/g, "’")
+                .replace(/â€œ/g, "“")
+                .replace(/â€/g, "”")
+                .replace(/â€“/g, "–")
+                .replace(/â€”/g, "—")
+                .replace(/â€¦/g, "…");
+        }
+
+        function cleanDoi(s) {
+            return (s || "")
+                .trim()
+                .replace(/^doi:\s*/i, "")
+                .replace(/\s+/g, "")
+                .replace(/[)\],.;:]+$/g, "");
+        }
+
+        function isValidDoi(s) {
+            return /^10\.\d{4,9}\/\S+$/i.test(s);
+        }
+
+        function buildBestUrl(d) {
+            const raw = (d.doiSource || "").trim();
+            if (!raw) return "";
+
+            if (/^https?:\/\//i.test(raw)) return raw;
+
+            const key = raw.toLowerCase();
+
+            const ssrnMatch = raw.match(/^SSRN:(\d+)$/i);
+            if (ssrnMatch) {
+                return `https://papers.ssrn.com/sol3/papers.cfm?abstract_id=${ssrnMatch[1]}`;
+            }
+
+            const divaMatch = raw.match(/^DIVA:(\d+)$/i);
+            if (divaMatch) {
+                return `https://www.diva-portal.org/smash/record.jsf?pid=diva2:${divaMatch[1]}`;
+            }
+
+            if (key.includes("ecb") && key.includes("2650")) {
+                return "https://www.ecb.europa.eu/pub/pdf/scpwps/ecb.wp2650~3b693e6009.en.pdf";
+            }
+
+            if (key === "idb-wp-1704") {
+                return "https://publications.iadb.org/en/women-political-leaders-agents-environmental-change";
+            }
+
+            if (key.includes("ecgi working paper")) {
+                return `https://www.ecgi.global/search?search_api_fulltext=${encodeURIComponent(d.title || "")}`;
+            }
+
+            if (key.includes("harvard corp gov") || key.includes("corpgov")) {
+                return `https://corpgov.law.harvard.edu/?s=${encodeURIComponent(d.title || "")}`;
+            }
+
+            if (key.includes("un women") || key.includes("ibp report")) {
+                return `https://www.google.com/search?q=${encodeURIComponent((d.title || "") + " " + raw)}`;
+            }
+
+            if (key.includes("frontiers in climate")) {
+                return `https://scholar.google.com/scholar?q=${encodeURIComponent(d.title || "")}`;
+            }
+
+            const doi = cleanDoi(raw);
+            if (isValidDoi(doi)) {
+                return `https://doi.org/${doi}`;
+            }
+
+            const scholarQ = `${d.title || ""} ${d.journal || ""} ${d.year || ""}`.trim();
+            return `https://scholar.google.com/scholar?q=${encodeURIComponent(scholarQ)}`;
+        }
+
+        // --- 5. INITIALIZATION ---
         window.onload = function() {
             parseData(rawCSV);
         };
 
-        // --- 5. DATA PROCESSING ---
+        // --- 6. DATA PROCESSING ---
         function parseData(csv) {
             Papa.parse(csv, {
                 header: true,
@@ -402,38 +476,23 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
         }
 
         function enrichRow(row) {
-            const title = (row.Title || row.title || "").trim();
-            const year = (row.Year || row.publication_year || "").trim();
-            const journal = (row.Journal || row.journal || "").trim();
-            const doiSource = (row['DOI / Source'] || row.doi || row.url || "").trim();
-            
-            const csvStudyType = (row.StudyType || row.studyType || "").trim();
-            const csvScope = (row.Scope || row.scope || "").trim();
-            const csvScopusQ = (row.scopusQ || "").trim();
+            const title = fixMojibake((row.Title || row.title || "").trim());
+            const year = (row.Year || row.publication_year || "").toString().trim();
+            const journal = fixMojibake((row.Journal || row.journal || "").trim());
+            const doiSource = (row["DOI / Source"] || row.doi || row.url || "").toString().trim();
+
+            const csvStudyType = (row.StudyType || row.studyType || "").toString().trim();
+            const csvScope = (row.Scope || row.scope || "").toString().trim();
+            const csvScopusQ = (row.scopusQ || "").toString().trim();
             const csvIF = (row.impactFactor || "").toString().trim();
             const csvIsPreprintRaw = (row.isPreprint || "").toString().trim();
-
-            function fixMojibake(s) {
-                  // quick pragmatic fix for the most common UTF-8→Latin1 mojibake
-                  if (!s) return s;
-                  return s
-                    .replace(/â€™/g, "’")
-                    .replace(/â€œ/g, "“")
-                    .replace(/â€/g, "”")
-                    .replace(/â€“/g, "–")
-                    .replace(/â€”/g, "—")
-                    .replace(/â€¦/g, "…");
-                }
-
-            const title = fixMojibake((row.Title || row.title || "").trim());
-            const journal = fixMojibake((row.Journal || row.journal || "").trim());
 
             // Normalize isPreprint
             let isPreprint = false;
             if (csvIsPreprintRaw) {
                 isPreprint = ["yes", "true", "1", "y"].includes(csvIsPreprintRaw.toLowerCase());
             } else {
-                const journalGuess = journal.toLowerCase();
+                const journalGuess = (journal || "").toLowerCase();
                 isPreprint = journalGuess.includes("working paper") || journalGuess.includes("preprint") || journalGuess.includes("mpra");
             }
 
@@ -442,8 +501,8 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
             const impactFactor = (csvIF && csvIF !== "-") ? csvIF : metrics.if;
             const scopusQ = csvScopusQ || (isPreprint ? "N/A" : metrics.q);
 
-            let studyType = csvStudyType || "Empirical";
-            let scope = csvScope || "Firm-Level";
+            const studyType = csvStudyType || "Empirical";
+            const scope = csvScope || "Firm-Level";
 
             return {
                 ...row,
@@ -466,29 +525,28 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
             const years = [...new Set(allData.map(d => d.year).filter(Boolean))].sort().reverse();
             const scopes = [...new Set(allData.map(d => d.scope).filter(Boolean))].sort();
 
-            populateSelect('typeFilter', types);
-            populateSelect('qFilter', qs);
-            populateSelect('yearFilter', years);
-            populateSelect('scopeFilter', scopes);
+            populateSelect("typeFilter", types);
+            populateSelect("qFilter", qs);
+            populateSelect("yearFilter", years);
+            populateSelect("scopeFilter", scopes);
 
-            // Re-bind listeners
-            document.getElementById('searchInput').oninput = applyFilters;
-            document.getElementById('typeFilter').onchange = applyFilters;
-            document.getElementById('qFilter').onchange = applyFilters;
-            document.getElementById('yearFilter').onchange = applyFilters;
-            document.getElementById('scopeFilter').onchange = applyFilters;
+            document.getElementById("searchInput").oninput = applyFilters;
+            document.getElementById("typeFilter").onchange = applyFilters;
+            document.getElementById("qFilter").onchange = applyFilters;
+            document.getElementById("yearFilter").onchange = applyFilters;
+            document.getElementById("scopeFilter").onchange = applyFilters;
         }
 
         function populateSelect(id, options) {
             const select = document.getElementById(id);
             if (!select) return;
-            // Keep the first default option "All ..."
+
             const firstOpt = select.options[0];
-            select.innerHTML = '';
+            select.innerHTML = "";
             select.appendChild(firstOpt);
-            
+
             options.forEach(opt => {
-                const el = document.createElement('option');
+                const el = document.createElement("option");
                 el.value = opt;
                 el.textContent = opt;
                 select.appendChild(el);
@@ -496,15 +554,17 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
         }
 
         function applyFilters() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const type = document.getElementById('typeFilter').value;
-            const q = document.getElementById('qFilter').value;
-            const year = document.getElementById('yearFilter').value;
-            const scope = document.getElementById('scopeFilter').value;
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            const type = document.getElementById("typeFilter").value;
+            const q = document.getElementById("qFilter").value;
+            const year = document.getElementById("yearFilter").value;
+            const scope = document.getElementById("scopeFilter").value;
 
             filteredData = allData.filter(d => {
-                const matchesSearch = (d.title || "").toLowerCase().includes(search) || 
-                                      (d.journal || "").toLowerCase().includes(search);
+                const matchesSearch =
+                    (d.title || "").toLowerCase().includes(search) ||
+                    (d.journal || "").toLowerCase().includes(search);
+
                 const matchesType = type === "All" || d.studyType === type;
                 const matchesQ = q === "All" || d.scopusQ === q;
                 const matchesYear = year === "All" || d.year == year;
@@ -516,71 +576,6 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
             updateDashboard();
         }
 
-  function cleanDoi(s) {
-    return (s || "")
-      .trim()
-      .replace(/^doi:\s*/i, "")
-      .replace(/\s+/g, "")
-      .replace(/[)\],.;:]+$/g, ""); // trim trailing punctuation
-  }
-
-  function isValidDoi(s) {
-    return /^10\.\d{4,9}\/\S+$/i.test(s);
-  }
-
-  function buildBestUrl(d) {
-    const raw = (d.doiSource || "").trim();
-    if (!raw) return "";
-
-    if (/^https?:\/\//i.test(raw)) return raw;
-
-    const key = raw.toLowerCase();
-
-    const ssrnMatch = raw.match(/^SSRN:(\d+)$/i);
-    if (ssrnMatch) {
-      return `https://papers.ssrn.com/sol3/papers.cfm?abstract_id=${ssrnMatch[1]}`;
-    }
-
-    const divaMatch = raw.match(/^DIVA:(\d+)$/i);
-    if (divaMatch) {
-      return `https://www.diva-portal.org/smash/record.jsf?pid=diva2:${divaMatch[1]}`;
-    }
-
-    if (key.includes("ecb") && key.includes("2650")) {
-      return "https://www.ecb.europa.eu/pub/pdf/scpwps/ecb.wp2650~3b693e6009.en.pdf";
-    }
-
-    if (key === "idb-wp-1704") {
-      return "https://publications.iadb.org/en/women-political-leaders-agents-environmental-change";
-    }
-
-    if (key.includes("ecgi working paper")) {
-      // Prefer a targeted ECGI search using the paper title
-      return `https://www.ecgi.global/search?search_api_fulltext=${encodeURIComponent(d.title || "")}`;
-    }
-
-    if (key.includes("harvard corp gov") || key.includes("corpgov")) {
-      return `https://corpgov.law.harvard.edu/?s=${encodeURIComponent(d.title || "")}`;
-    }
-      
-    if (key.includes("un women") || key.includes("ibp report")) {
-      return `https://www.google.com/search?q=${encodeURIComponent((d.title || "") + " " + raw)}`;
-    }
-
-    if (key.includes("frontiers in climate")) {
-      // Best fallback: scholar query for the title (Frontiers pages are discoverable)
-      return `https://scholar.google.com/scholar?q=${encodeURIComponent(d.title || "")}`;
-    }
-
-    const doi = cleanDoi(raw);
-    if (isValidDoi(doi)) {
-      return `https://doi.org/${doi}`;
-    }
-
-    const scholarQ = `${d.title || ""} ${d.journal || ""} ${d.year || ""}`.trim();
-    return `https://scholar.google.com/scholar?q=${encodeURIComponent(scholarQ)}`;
-  }
-
         // --- 8. UI UPDATES ---
         function updateDashboard() {
             renderTable();
@@ -588,11 +583,9 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
         }
 
         function updateStats() {
-            // Count
-            document.getElementById('countDisplay').textContent = filteredData.length;
-            document.getElementById('statTotal').textContent = filteredData.length;
+            document.getElementById("countDisplay").textContent = filteredData.length;
+            document.getElementById("statTotal").textContent = filteredData.length;
 
-            // Avg Impact Factor
             let totalIF = 0;
             let countIF = 0;
             filteredData.forEach(d => {
@@ -603,82 +596,89 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
                 }
             });
             const avg = countIF > 0 ? (totalIF / countIF).toFixed(2) : "0.0";
-            document.getElementById('statImpact').textContent = avg;
+            document.getElementById("statImpact").textContent = avg;
 
-            // Top Journal
             if (filteredData.length > 0) {
                 const journalCounts = {};
-                filteredData.forEach(d => { 
-                    if(d.journal) journalCounts[d.journal] = (journalCounts[d.journal] || 0) + 1; 
+                filteredData.forEach(d => {
+                    if (d.journal) journalCounts[d.journal] = (journalCounts[d.journal] || 0) + 1;
                 });
-                if(Object.keys(journalCounts).length > 0) {
-                    const topJournal = Object.keys(journalCounts).reduce((a, b) => journalCounts[a] > journalCounts[b] ? a : b);
-                    document.getElementById('statJournal').textContent = topJournal;
-                    document.getElementById('statJournal').title = topJournal;
+
+                if (Object.keys(journalCounts).length > 0) {
+                    const topJournal = Object.keys(journalCounts).reduce((a, b) =>
+                        journalCounts[a] > journalCounts[b] ? a : b
+                    );
+                    document.getElementById("statJournal").textContent = topJournal;
+                    document.getElementById("statJournal").title = topJournal;
                 } else {
-                    document.getElementById('statJournal').textContent = "-";
+                    document.getElementById("statJournal").textContent = "-";
                 }
             } else {
-                document.getElementById('statJournal').textContent = "-";
+                document.getElementById("statJournal").textContent = "-";
             }
         }
 
         function renderTable() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
 
             if (filteredData.length === 0) {
-                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById("emptyState").classList.remove("hidden");
                 return;
             } else {
-                document.getElementById('emptyState').classList.add('hidden');
+                document.getElementById("emptyState").classList.add("hidden");
             }
 
             filteredData.forEach(d => {
-                const tr = document.createElement('tr');
+                const tr = document.createElement("tr");
                 tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0";
-                
-                // Badges
-                const qBadge = d.scopusQ === 'Q1' ? `<span class="badge badge-q1">Q1</span>` : 
-                               d.scopusQ === 'Q2' ? `<span class="badge badge-q2">Q2</span>` : 
-                               `<span class="badge bg-slate-100 text-slate-500 border border-slate-200">${d.scopusQ || 'N/A'}</span>`;
-                
-                const typeBadgeColor = d.studyType === 'Review' ? 'bg-purple-100 text-purple-700 border-purple-200' : 
-                                       d.studyType === 'Working Paper' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                                       'bg-blue-50 text-blue-700 border-blue-100';
 
-                const scopeIcon = d.scope === 'Policy-Relevant' ? '<i class="fa-solid fa-landmark mr-1"></i>' : '<i class="fa-solid fa-building mr-1"></i>';
+                const qBadge =
+                    d.scopusQ === "Q1" ? `<span class="badge badge-q1">Q1</span>` :
+                    d.scopusQ === "Q2" ? `<span class="badge badge-q2">Q2</span>` :
+                    `<span class="badge bg-slate-100 text-slate-500 border border-slate-200">${d.scopusQ || "N/A"}</span>`;
 
-                let linkHtml = '';
-                    const url = buildBestUrl(d);
-                    if (url) {
-                      const label = (d.doiSource || '').trim();
-                      linkHtml = `
+                const typeBadgeColor =
+                    d.studyType === "Review" ? "bg-purple-100 text-purple-700 border-purple-200" :
+                    d.studyType === "Working Paper" ? "bg-orange-100 text-orange-700 border-orange-200" :
+                    "bg-blue-50 text-blue-700 border-blue-100";
+
+                const scopeIcon =
+                    d.scope === "Policy-Relevant"
+                        ? '<i class="fa-solid fa-landmark mr-1"></i>'
+                        : '<i class="fa-solid fa-building mr-1"></i>';
+
+                let linkHtml = "";
+                const url = buildBestUrl(d);
+                if (url) {
+                    const label = (d.doiSource || "").trim();
+                    linkHtml = `
                         <a href="${url}" target="_blank" rel="noopener"
-                           title="${label || 'Open source'}"
+                           title="${label || "Open source"}"
                            class="text-slate-400 hover:text-emerald-600 transition-colors p-2">
                           <i class="fa-solid fa-external-link-alt"></i>
                         </a>`;
-                    }
+                }
+
                 tr.innerHTML = `
                     <td class="px-6 py-4">
-                        <div class="font-bold text-slate-800 text-sm leading-snug mb-1">${d.title || '-'}</div>
+                        <div class="font-bold text-slate-800 text-sm leading-snug mb-1">${d.title || "-"}</div>
                         <div class="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                            <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">${d.year || '-'}</span>
-                            <span class="italic truncate max-w-[250px]" title="${d.journal || ''}">${d.journal || '-'}</span>
-                            ${d.isPreprint ? '<span class="badge badge-preprint text-[10px] uppercase tracking-wide">Preprint</span>' : ''}
+                            <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">${d.year || "-"}</span>
+                            <span class="italic truncate max-w-[250px]" title="${d.journal || ""}">${d.journal || "-"}</span>
+                            ${d.isPreprint ? '<span class="badge badge-preprint text-[10px] uppercase tracking-wide">Preprint</span>' : ""}
                         </div>
                     </td>
                     <td class="px-4 py-4 align-top">
                         <div class="flex flex-col gap-1 items-start">
                             ${qBadge}
-                            <span class="text-xs text-slate-400 font-mono">IF: ${d.impactFactor || '-'}</span>
+                            <span class="text-xs text-slate-400 font-mono">IF: ${d.impactFactor || "-"}</span>
                         </div>
                     </td>
                     <td class="px-4 py-4 align-top">
                         <div class="flex flex-col gap-2 items-start">
-                            <span class="badge ${typeBadgeColor} border">${d.studyType || 'Empirical'}</span>
-                            <span class="text-xs text-slate-500 font-medium flex items-center">${scopeIcon} ${d.scope || '-'}</span>
+                            <span class="badge ${typeBadgeColor} border">${d.studyType || "Empirical"}</span>
+                            <span class="text-xs text-slate-500 font-medium flex items-center">${scopeIcon} ${d.scope || "-"}</span>
                         </div>
                     </td>
                     <td class="px-4 py-4 text-right align-top">
@@ -692,17 +692,16 @@ Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of Afri
         // --- 9. EXPORT FEATURE ---
         function exportCSV() {
             const csv = Papa.unparse(filteredData);
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
             link.setAttribute("download", "green_database_export.csv");
-            link.style.visibility = 'hidden';
+            link.style.visibility = "hidden";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
-
     </script>
 </body>
 </html>
