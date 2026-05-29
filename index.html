@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sustainable Female Founders | Climate & Sustainability</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        h1, h2, h3, .serif { font-family: 'Merriweather', serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background-color: transparent; }
+        .filter-btn.active {
+            background-color: #10b981;
+            color: white;
+            border-color: #10b981;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+        }
+        .profile-card { transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease; }
+        .profile-card:hover { transform: translateY(-2px); border-color: rgba(16, 185, 129, 0.45); box-shadow: 0 12px 24px -18px rgba(15, 23, 42, 0.35); }
+        .modal-backdrop { backdrop-filter: blur(6px); }
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <div class="sticky top-4 z-40 px-4 sm:px-6 lg:px-8 w-full max-w-[1400px] mx-auto mt-4">
+        <nav class="bg-white/80 backdrop-blur-lg border border-slate-200/60 h-16 rounded-2xl shadow-sm flex items-center justify-between px-4 sm:px-6">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 flex-none">
+                    <i class="fa-solid fa-user-group"></i>
+                </div>
+                <h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight font-sans truncate">
+                    Sustainable Female Founders
+                    <span class="text-slate-400 font-medium text-sm ml-2 hidden sm:inline">| Women, Climate & Sustainability</span>
+                </h1>
+            </div>
+            <span class="hidden md:inline-flex text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1">Prototype v1</span>
+        </nav>
+    </div>
+
+    <main class="flex-1 w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 pt-6">
+        <section class="mb-6 ml-2">
+            <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Sustainable Female Founders</h2>
+            <p class="text-slate-500 mt-2 max-w-4xl leading-relaxed">
+                Explore profile-style entries of women whose work connects leadership, sustainability, climate action, research, entrepreneurship, and institutional change. Current entries are fictional placeholders for structural testing and data-protection-safe review.
+            </p>
+        </section>
+
+        <section class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 sticky top-[100px] z-30">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between">
+                    <div class="flex flex-wrap gap-2" id="filterButtons">
+                        <button class="filter-btn active px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-filter-type="all" data-filter-value="All">All Founders</button>
+                        <button class="filter-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-filter-type="industry" data-filter-value="Energy">Energy</button>
+                        <button class="filter-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-filter-type="industry" data-filter-value="Finance">Finance</button>
+                        <button class="filter-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-filter-type="industry" data-filter-value="Science">Science</button>
+                        <button class="filter-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-filter-type="impact" data-filter-value="Climate">Climate</button>
+                        <button class="filter-btn px-4 py-2 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-emerald-500 transition-colors" data-filter-type="impact" data-filter-value="Gender Equality">Gender Equality</button>
+                    </div>
+                    <div class="relative w-full xl:w-72 flex-none">
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                        <input type="text" id="profileSearch" placeholder="Search profiles..." class="w-full bg-slate-50 border border-slate-200 rounded-full pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Region
+                        <select id="regionFilter" class="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
+                            <option value="All">All regions</option>
+                            <option value="Germany">Germany</option>
+                            <option value="Europe">Europe</option>
+                            <option value="Global">Global</option>
+                        </select>
+                    </label>
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Career stage
+                        <select id="careerFilter" class="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
+                            <option value="All">All stages</option>
+                            <option value="Early Career">Early Career</option>
+                            <option value="Mid Career">Mid Career</option>
+                            <option value="Senior">Senior</option>
+                            <option value="Founder">Founder</option>
+                            <option value="Executive">Executive</option>
+                        </select>
+                    </label>
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Entry type
+                        <select id="typeFilter" class="mt-1 w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50">
+                            <option value="All">All types</option>
+                            <option value="Short Profile">Short Profile</option>
+                            <option value="Interview">Interview</option>
+                            <option value="Case Study">Case Study</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+            <div class="lg:col-span-4 bg-emerald-50/50 border border-emerald-100 p-6 rounded-2xl shadow-sm relative overflow-hidden">
+                <i class="fa-solid fa-leaf text-[120px] text-emerald-500/10 absolute -right-6 -top-6 pointer-events-none transform -rotate-12"></i>
+                <div class="relative z-10">
+                    <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider">Database logic</span>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-4 mb-4">From evidence to example</h3>
+                    <p class="text-slate-600 leading-relaxed text-sm mb-4">This prototype mirrors the paper database visually while shifting the content model from academic evidence to sustainable female founder profiles.</p>
+                    <p class="text-slate-600 leading-relaxed text-sm">In a future version, each founder profile can be linked to research themes from the paper database, allowing users to move between scientific findings and real-world examples of sustainable entrepreneurship.</p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Visible profiles</p>
+                    <p class="text-2xl font-bold text-blue-600" id="kpiProfiles">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Industries</p>
+                    <p class="text-2xl font-bold text-emerald-600" id="kpiIndustries">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Impact areas</p>
+                    <p class="text-2xl font-bold text-purple-600" id="kpiImpacts">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Consent status</p>
+                    <p class="text-lg font-bold text-amber-600" id="kpiConsent">Placeholder</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="flex justify-between items-end mb-4 px-1 border-t border-slate-200 pt-8 mt-4">
+            <div>
+                <h3 class="text-xl font-bold text-slate-800 font-sans">Founder Entries</h3>
+                <p class="text-sm text-slate-500">Fictional placeholder data for structure, design, and filtering review</p>
+            </div>
+            <span class="text-xs text-emerald-700 bg-emerald-50 font-bold px-3 py-1 rounded-full border border-emerald-200">Showing <span id="visibleCount">0</span> profiles</span>
+        </div>
+
+        <section id="profilesGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch"></section>
+
+        <section id="emptyState" class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200 border-dashed mt-4">
+            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
+                <i class="fa-regular fa-folder-open text-2xl"></i>
+            </div>
+            <h3 class="text-slate-600 font-medium">No profiles match your criteria</h3>
+            <p class="text-slate-400 text-sm mt-1">Try adjusting the search or filters</p>
+        </section>
+    </main>
+
+    <div id="profileModal" class="hidden fixed inset-0 z-50 modal-backdrop bg-slate-900/45 p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="modalName">
+        <div class="bg-white rounded-3xl shadow-2xl border border-white/80 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-100 px-6 py-4 flex justify-between items-start gap-4 rounded-t-3xl">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-emerald-700" id="modalIndustry"></p>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-1" id="modalName"></h3>
+                    <p class="text-sm text-slate-500 mt-1" id="modalRole"></p>
+                </div>
+                <button id="closeModal" class="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-500 flex items-center justify-center transition-colors" aria-label="Close profile details">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6" id="modalMeta"></div>
+                <h4 class="font-bold text-slate-800 mb-2">Short profile</h4>
+                <p class="text-slate-600 leading-relaxed mb-5" id="modalBio"></p>
+                <h4 class="font-bold text-slate-800 mb-2">Key achievement</h4>
+                <p class="text-slate-600 leading-relaxed mb-5" id="modalAchievement"></p>
+                <h4 class="font-bold text-slate-800 mb-2">Linked research themes</h4>
+                <div class="flex flex-wrap gap-2 mb-6" id="modalThemes"></div>
+                <div class="bg-amber-50 border border-amber-100 text-amber-800 rounded-2xl p-4 text-sm leading-relaxed">
+                    <strong>Prototype note:</strong> This entry is fictional placeholder content for testing the sustainable female founder database structure. Real founder profiles should only be added after permission, image rights, and data-protection requirements are clarified.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const profiles = [
+            {
+                name: "Dr. Lena Hoffmann",
+                role: "Renewable Energy Strategy Lead",
+                organisation: "Placeholder Energy Institute",
+                industry: "Energy",
+                region: "Germany",
+                careerStage: "Mid Career",
+                profileType: "Short Profile",
+                impacts: ["Climate", "Energy Transition", "Women in STEM"],
+                tags: ["Climate", "Leadership", "Energy", "STEM"],
+                shortBio: "Dr. Lena Hoffmann works on renewable energy strategy, with a focus on translating technical energy research into practical institutional decisions. Her work connects engineering, climate policy, and organisational change. She is especially interested in making energy systems more accessible to younger women entering technical and policy-oriented careers.",
+                keyAchievement: "Led a cross-sector strategy project on renewable energy adoption and institutional transition planning.",
+                linkedThemes: ["STEM participation", "Environmental leadership", "Energy transition", "Founder visibility"],
+                consentStatus: "Placeholder"
+            },
+            {
+                name: "Amara Schneider",
+                role: "Founder",
+                organisation: "Placeholder Circular Lab",
+                industry: "Entrepreneurship",
+                region: "Europe",
+                careerStage: "Founder",
+                profileType: "Case Study",
+                impacts: ["Circular Economy", "Sustainability", "Innovation"],
+                tags: ["Circular Economy", "Founder", "Innovation", "Sustainability"],
+                shortBio: "Amara Schneider founded a circular materials startup that develops reusable packaging solutions for small and medium-sized organisations. Her work focuses on reducing waste while building commercially viable sustainability models. She represents the connection between entrepreneurship, environmental responsibility, and practical problem-solving.",
+                keyAchievement: "Built a pilot circular packaging programme for local organisations and small businesses.",
+                linkedThemes: ["Female entrepreneurship", "Circular economy", "Sustainable innovation", "Green business models"],
+                consentStatus: "Placeholder"
+            },
+            {
+                name: "Prof. Miriam Keller",
+                role: "Professor of Labour Economics",
+                organisation: "Placeholder University",
+                industry: "Science",
+                region: "Germany",
+                careerStage: "Senior",
+                profileType: "Short Profile",
+                impacts: ["Gender Equality", "Education", "Public Policy"],
+                tags: ["Research", "Labour Markets", "Gender Equality", "Education"],
+                shortBio: "Prof. Miriam Keller researches labour market inequality, occupational choice, and the long-term effects of education policy. Her work helps explain how institutional conditions shape career outcomes. She is included as a founder example for students interested in combining rigorous research with public relevance.",
+                keyAchievement: "Published policy-relevant research on gendered labour-market outcomes and educational pathways.",
+                linkedThemes: ["Labour market inequality", "Education", "Gender norms", "Research leadership"],
+                consentStatus: "Placeholder"
+            },
+            {
+                name: "Sofia Brandt",
+                role: "Sustainable Finance Analyst",
+                organisation: "Placeholder Climate Capital",
+                industry: "Finance",
+                region: "Europe",
+                careerStage: "Early Career",
+                profileType: "Interview",
+                impacts: ["Climate", "Sustainable Finance", "ESG"],
+                tags: ["Finance", "ESG", "Climate", "Capital Allocation"],
+                shortBio: "Sofia Brandt works at the intersection of financial analysis and sustainability strategy. Her profile illustrates how early-career professionals can contribute to climate-aligned capital allocation through research, due diligence, and investment frameworks.",
+                keyAchievement: "Contributed to a sustainability-screening framework for climate-related investment opportunities.",
+                linkedThemes: ["Climate finance", "ESG analysis", "Women in finance", "Capital allocation"],
+                consentStatus: "Placeholder"
+            },
+            {
+                name: "Dr. Noura El-Sayed",
+                role: "Water Governance Specialist",
+                organisation: "Placeholder Policy Lab",
+                industry: "Public Policy",
+                region: "Global",
+                careerStage: "Mid Career",
+                profileType: "Case Study",
+                impacts: ["Climate", "Water", "Community Resilience"],
+                tags: ["Water", "Governance", "Adaptation", "Policy"],
+                shortBio: "Dr. Noura El-Sayed focuses on water governance and climate adaptation in vulnerable communities. Her work demonstrates the importance of connecting technical policy design with local participation and gender-sensitive implementation.",
+                keyAchievement: "Designed a participatory water-governance framework for climate adaptation planning.",
+                linkedThemes: ["Community-based natural resource management", "Climate adaptation", "Gender-responsive policy", "Water governance"],
+                consentStatus: "Placeholder"
+            },
+            {
+                name: "Eva Martín",
+                role: "Engineering Manager",
+                organisation: "Placeholder Green Mobility",
+                industry: "Engineering",
+                region: "Europe",
+                careerStage: "Executive",
+                profileType: "Short Profile",
+                impacts: ["Sustainability", "Transport", "Innovation"],
+                tags: ["Engineering", "Transport", "Leadership", "Innovation"],
+                shortBio: "Eva Martín leads engineering teams working on low-carbon mobility infrastructure. Her profile shows how technical leadership can support sustainability transitions through product design, systems thinking, and operational execution.",
+                keyAchievement: "Led the engineering delivery of a low-carbon mobility infrastructure prototype.",
+                linkedThemes: ["Women in engineering", "Sustainable transport", "Technical leadership", "Eco-innovation"],
+                consentStatus: "Placeholder"
+            }
+        ];
+
+        let activeFilter = { type: "all", value: "All" };
+        let searchQuery = "";
+
+        window.onload = function() {
+            document.getElementById('profileSearch').addEventListener('input', function(e) {
+                searchQuery = e.target.value.toLowerCase();
+                updateProfiles();
+            });
+
+            ['regionFilter', 'careerFilter', 'typeFilter'].forEach(id => {
+                document.getElementById(id).addEventListener('change', updateProfiles);
+            });
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    activeFilter = {
+                        type: e.currentTarget.dataset.filterType,
+                        value: e.currentTarget.dataset.filterValue
+                    };
+                    updateProfiles();
+                });
+            });
+
+            document.getElementById('closeModal').addEventListener('click', closeProfileModal);
+            document.getElementById('profileModal').addEventListener('click', function(e) {
+                if (e.target.id === 'profileModal') closeProfileModal();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeProfileModal();
+            });
+
+            updateProfiles();
+        };
+
+        function updateProfiles() {
+            const region = document.getElementById('regionFilter').value;
+            const career = document.getElementById('careerFilter').value;
+            const type = document.getElementById('typeFilter').value;
+
+            const filtered = profiles.filter(profile => {
+                const matchesMain = activeFilter.type === 'all'
+                    || (activeFilter.type === 'industry' && profile.industry === activeFilter.value)
+                    || (activeFilter.type === 'impact' && profile.impacts.includes(activeFilter.value));
+
+                const matchesRegion = region === 'All' || profile.region === region;
+                const matchesCareer = career === 'All' || profile.careerStage === career;
+                const matchesType = type === 'All' || profile.profileType === type;
+                const haystack = [profile.name, profile.role, profile.organisation, profile.industry, profile.region, profile.shortBio, profile.keyAchievement, ...profile.tags, ...profile.impacts, ...profile.linkedThemes].join(' ').toLowerCase();
+                const matchesSearch = haystack.includes(searchQuery);
+
+                return matchesMain && matchesRegion && matchesCareer && matchesType && matchesSearch;
+            });
+
+            renderProfileCards(filtered);
+            updateKPIs(filtered);
+        }
+
+        function updateKPIs(data) {
+            document.getElementById('kpiProfiles').textContent = data.length;
+            document.getElementById('visibleCount').textContent = data.length;
+            document.getElementById('kpiIndustries').textContent = new Set(data.map(p => p.industry)).size;
+            document.getElementById('kpiImpacts').textContent = new Set(data.flatMap(p => p.impacts)).size;
+            document.getElementById('kpiConsent').textContent = data.every(p => p.consentStatus === 'Placeholder') ? 'Placeholder' : 'Mixed';
+        }
+
+        function renderProfileCards(data) {
+            const grid = document.getElementById('profilesGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            if (data.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            data.forEach((profile) => {
+                const originalIndex = profiles.indexOf(profile);
+                const card = document.createElement('article');
+                card.className = 'profile-card bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col h-full cursor-pointer';
+                card.tabIndex = 0;
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', `Open profile for ${profile.name}`);
+                card.addEventListener('click', () => openProfileModal(originalIndex));
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') openProfileModal(originalIndex);
+                });
+
+                const initials = profile.name.split(' ').map(part => part[0]).slice(0, 2).join('');
+                const impactPills = profile.impacts.slice(0, 3).map(impact => `<span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">${impact}</span>`).join('');
+
+                card.innerHTML = `
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 border border-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-lg flex-none">${initials}</div>
+                        <div class="min-w-0">
+                            <h4 class="text-slate-800 text-base font-bold leading-snug">${profile.name}</h4>
+                            <p class="text-sm text-slate-500 mt-1">${profile.role}</p>
+                            <p class="text-xs text-slate-400 mt-0.5 truncate">${profile.organisation}</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mb-4">${impactPills}</div>
+                    <p class="text-sm text-slate-600 leading-relaxed line-clamp-3 mb-5">${profile.shortBio}</p>
+                    <div class="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
+                        <div class="text-[11px] text-slate-500 font-mono flex items-center gap-2 min-w-0">
+                            <span class="bg-slate-100 px-1.5 py-0.5 rounded">${profile.region}</span>
+                            <span class="truncate max-w-[110px]" title="${profile.industry}">${profile.industry}</span>
+                        </div>
+                        <span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">${profile.careerStage}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openProfileModal(index) {
+            const profile = profiles[index];
+            document.getElementById('modalIndustry').textContent = `${profile.industry} · ${profile.region}`;
+            document.getElementById('modalName').textContent = profile.name;
+            document.getElementById('modalRole').textContent = `${profile.role}, ${profile.organisation}`;
+            document.getElementById('modalBio').textContent = profile.shortBio;
+            document.getElementById('modalAchievement').textContent = profile.keyAchievement;
+
+            document.getElementById('modalMeta').innerHTML = [
+                ['Career stage', profile.careerStage],
+                ['Entry type', profile.profileType],
+                ['Consent status', profile.consentStatus]
+            ].map(([label, value]) => `
+                <div class="bg-slate-50 border border-slate-100 rounded-2xl p-3">
+                    <p class="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">${label}</p>
+                    <p class="text-sm font-semibold text-slate-700">${value}</p>
+                </div>
+            `).join('');
+
+            document.getElementById('modalThemes').innerHTML = profile.linkedThemes.map(theme => `<span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">${theme}</span>`).join('');
+            document.getElementById('profileModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+    </script>
+</body>
+</html>
