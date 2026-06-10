@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climate, Gender, & Sustainability Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PapaParse -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <!-- Pako for gzip decompression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* Custom Scrollbar */
+        .scroller::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scroller::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+        .scroller::-webkit-scrollbar-track { background-color: transparent; }
+
+        /* Smooth Transitions */
+        .transition-all-300 { transition: all 0.3s ease; }
+        
+        /* Table Styles */
+        th { font-weight: 600; letter-spacing: 0.025em; }
+        
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+        .badge-q1 { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; } /* Green */
+        .badge-q2 { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; } /* Yellow */
+        .badge-preprint { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-style: dashed; }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 h-16 flex-none z-20">
+        <div class="max-w-[1600px] mx-auto px-4 h-full flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                    <i class="fa-solid fa-leaf"></i>
+                </div>
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight">Climate, Gender, <span class="text-emerald-600">&</span> Sustainability</h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="text-xs text-slate-400 font-mono hidden md:block">
+                    v2.1.0 (Beta)
+                </div>
+                <button onclick="exportCSV()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Export Data</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex flex-1 overflow-hidden max-w-[1600px] mx-auto w-full">
+        
+        <!-- Sidebar Filters -->
+        <aside class="w-72 bg-white border-r border-slate-200 flex-col flex-none hidden md:flex z-10">
+            <div class="p-5 border-b border-slate-100">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Filters</h2>
+                
+                <!-- Search -->
+                <div class="relative mb-6">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" placeholder="Search papers..." 
+                        class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all">
+                </div>
+
+                <!-- Study Type Filter -->
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Study Type</label>
+                    <select id="typeFilter" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:border-emerald-500">
+                        <option value="All">All Types</option>
+                    </select>
+                </div>
+
+                <!-- Scopus Q Filter -->
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Scopus Quartile</label>
+                    <select id="qFilter" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:border-emerald-500">
+                        <option value="All">All Quartiles</option>
+                    </select>
+                </div>
+
+                <!-- Year Filter -->
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Year</label>
+                    <select id="yearFilter" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:border-emerald-500">
+                        <option value="All">All Years</option>
+                    </select>
+                </div>
+                
+                <!-- Scope Filter (New) -->
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Scope</label>
+                    <select id="scopeFilter" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:border-emerald-500">
+                        <option value="All">All Scopes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="p-5 mt-auto bg-slate-50 border-t border-slate-200">
+                <div class="text-xs text-slate-500 text-center leading-relaxed">
+                    Showing <span id="countDisplay" class="font-bold text-slate-800">0</span> papers
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col bg-slate-50/50 overflow-hidden relative">
+            
+            <!-- Stats Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 flex-none">
+                <!-- Total Papers -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium uppercase">Total Papers</p>
+                        <p class="text-2xl font-bold text-slate-800 mt-1" id="statTotal">0</p>
+                    </div>
+                    <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                </div>
+
+                <!-- Avg Impact -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium uppercase">Avg Impact Factor</p>
+                        <p class="text-2xl font-bold text-emerald-700 mt-1" id="statImpact">0.0</p>
+                    </div>
+                    <div class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+
+                <!-- Top Journal -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium uppercase">Top Journal</p>
+                        <p class="text-lg font-bold text-slate-800 mt-1 truncate max-w-[150px]" id="statJournal">-</p>
+                    </div>
+                    <div class="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="flex-1 overflow-auto px-6 pb-6 scroller">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden min-w-[1000px]">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[45%]">Paper Details</th>
+                                <th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Metrics</th>
+                                <th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Scope & Type</th>
+                                <th class="px-4 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Link</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-100">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20">
+                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4">
+                        <i class="fa-regular fa-folder-open text-2xl"></i>
+                    </div>
+                    <h3 class="text-slate-600 font-medium">No papers found</h3>
+                    <p class="text-slate-400 text-sm mt-1">Try adjusting your filters</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- 1. EMBEDDED DATA ---
+        // Full dataset is embedded as a gzip-compressed Base64 string and decoded at runtime.
+        // We decode and decompress it into a CSV string for Papa Parse.
+        const csvBase64 = "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";
+        const rawCSV = (() => {
+            const binaryString = atob(csvBase64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return pako.ungzip(bytes, { to: 'string' });
+        })(); /* Original dataset below is now commented out
+Gender audits: An approach to engendering energy policy in Nepal, Kenya and Senegal	10.1016/j.erss.2019.101378	2020	Energy Research & Social Science	Empirical	Policy-Relevant	Q1	6.7	No
+Gender and adaptive capacity in climate change scholarship of developing countries: A systematic review	10.1080/17565529.2023.2166781	2023	Climate and Development	Review	Policy-Relevant	Q1	4.1	No
+Discourses on gender in climate change adaptation projects of Bangladesh	10.1075/jlp.22121.dev	2023	Journal of Language and Politics	Empirical	Policy-Relevant	Q2	1.8	No
+Gender and participation in community-based adaptation: Evidence from Senegal	10.1016/j.worlddev.2021.105448	2021	World Development	Empirical	Policy-Relevant	Q1	6.9	No
+A gendered perspective on climate change adaptation strategies: A case study from Yunnan, China	10.1080/13549839.2022.2130883	2023	Local Environment	Empirical	Firm-Level	Q2	2.8	No
+Gendered Perspectives on Climate Change Adaptation: Badlagaree Village, Bangladesh	10.3390/w13141922	2021	Water	Empirical	Firm-Level	Q2	3.5	No
+On the Agency of Men and Women in Uganda's Dry Landscapes	10.1016/j.ijdrr.2025.105514	2025	Int. J. of Disaster Risk Reduction	Empirical	Firm-Level	Q1	4.5	No
+Assessing determinants of women farmers' targeted adaptation measures in rural Ghana	10.1016/j.wace.2021.100353	2021	Weather and Climate Extremes	Empirical	Firm-Level	Q1	8	No
+Gender-based variations in climate change perception... in Pra River Basin	10.1108/IJCCSM-02-2020-0018	2021	Int. J. of Climate Change Strategies	Empirical	Firm-Level	Q2	3.2	No
+Climate change adaptation strategies by smallholder farmers in Nigeria	10.1016/j.heliyon.2021.e07162	2021	Heliyon	Empirical	Firm-Level	Q1	4	No
+Gender differences in climate change adaptation strategies... rural Kenya	10.1016/j.ecolecon.2017.03.019	2017	Ecological Economics	Empirical	Firm-Level	Q1	6.5	No
+How resilient are farming households and communities to a changing climate in Africa?	10.1016/j.gloenvcha.2015.06.003	2015	Global Environmental Change	Empirical	Policy-Relevant	Q1	9.2	No
+Raising the voices of Pacific Island women to inform climate adaptation policies	10.1016/j.marpol.2018.03.011	2018	Marine Policy	Empirical	Policy-Relevant	Q1	4.3	No
+Linking gender, climate change and security in the Pacific Islands Region: A systematic review	10.1007/s13280-022-01813-0	2023	Ambio	Review	Policy-Relevant	Q1	6.5	No
+Adaptation strategies employed by rural women... in Limpopo, South Africa	10.1108/MEQ-09-2021-0207	2022	Management of Environmental Quality	Empirical	Firm-Level	Q2	3.1	No
+Gender lessons for climate initiatives: A comparative study of REDD+ impacts	10.1016/j.worlddev.2018.02.027	2018	World Development	Empirical	Policy-Relevant	Q1	6.9	No
+Effect of women's inclusion on conservation and management of Water User Associations	10.1016/j.worlddev.2025.107255	2026	World Development	Empirical	Firm-Level	Q1	6.9	No
+Enhancing gender-responsive resilience: role of women in DRR in Oman	10.1016/j.pdisas.2024.100376	2024	Progress in Disaster Science	Empirical	Policy-Relevant	Q1	4.5	No
+Women as Policy Makers: Evidence from a Randomized Policy Experiment in India	10.1111/j.1468-0262.2004.00539.x	2004	Econometrica	Empirical	Policy-Relevant	Q1	6.4	No
+Gender Mainstreaming the European Union Energy Transition	10.3390/en15218087	2022	Energies	Empirical	Policy-Relevant	Q2	3.2	No
+What about Gender in Climate Change? Twelve Feminist Lessons	10.3390/su10030627	2018	Sustainability	Review	Policy-Relevant	Q2	3.9	No
+Climate action from a gender perspective: A systematic review	10.1016/j.erss.2024.103511	2024	Energy Research & Social Science	Review	Policy-Relevant	Q1	6.7	No
+Neglect to recognition: Embracing women as key agents in climate solutions	10.1016/j.envsci.2025.104216	2025	Environmental Science & Policy	Empirical	Policy-Relevant	Q1	5.5	No
+The association between gender equality and climate adaptation across the globe	10.1186/s12889-024-18880-5	2024	BMC Public Health	Empirical	Policy-Relevant	Q1	4.5	No
+Gender Equality and Climate Policy Scorecard	10.1177/18747655251371005	2025	Statistical Journal of the IAOS	Empirical	Policy-Relevant	Q2	2.1	No
+The intersections of climate change, gender, migration, and SRH in Sub-Saharan Africa	10.1016/j.joclim.2025.100604	2025	Journal of Climate Change & Health	Review	Policy-Relevant	Q2	3	No
+Womenâ€™s health and wellbeing prioritisation in climate change NAPs	10.1016/j.envint.2025.109811	2025	Environment International	Empirical	Policy-Relevant	Q1	11.8	No
+The impact of women's political empowerment on renewable energy demand	10.1016/j.eneco.2024.108081	2025	Energy Economics	Empirical	Policy-Relevant	Q1	9.2	No
+Women's empowerment in driving the energy transition in developing nations	10.1016/j.rser.2025.115647	2025	Renewable and Sustainable Energy Reviews	Empirical	Policy-Relevant	Q1	15.9	No
+From gender gaps to gender-transformative climate-smart agriculture	10.1016/j.cosust.2024.101415	2024	Current Opinion in Environmental Sust.	Review	Policy-Relevant	Q1	7.9	No
+Fostering leadership and gender equality in climate action... in Peru	10.1016/j.lana.2025.101109	2025	The Lancet Regional Health â€“ Americas	Empirical	Firm-Level	Q1	7.2	No
+Climate change and gendered vulnerability: A systematic review of women's health	10.1177/17455057251323645	2025	Women's Health (London)	Review	Policy-Relevant	Q2	2.9	No
+Just energy transition and gender: A systematic review for feminist research	10.1016/j.erss.2025.104138	2025	Energy Research & Social Science	Review	Policy-Relevant	Q1	6.7	No
+Mitigation potential of sustainable urban transport measures across gender groups	10.1016/j.jtrangeo.2022.103383	2022	Journal of Transport Geography	Empirical	Policy-Relevant	Q1	6.4	No
+Women's status and carbon dioxide emissions: A cross-national analysis	10.1016/j.ssresearch.2012.03.008	2012	Social Science Research	Empirical	Policy-Relevant	Q1	3.2	No
+Gender equality and state environmentalism	10.1177/0891243204273612	2005	Gender & Society	Empirical	Policy-Relevant	Q1	4.8	No
+The gendered nature of natural disasters: Impact on the gender gap in life expectancy	10.1111/j.1467-8306.2007.00563.x	2007	Annals of the American Assoc. of Geographers	Empirical	Policy-Relevant	Q1	4.6	No
+Gender and climate change: Do female parliamentarians make a difference?	10.1016/j.ejpoleco.2018.08.001	2019	European Journal of Political Economy	Empirical	Policy-Relevant	Q1	2.8	No
+Female political empowerment and green finance	10.1016/j.eneco.2024.107370	2024	Energy Economics	Empirical	Policy-Relevant	Q1	9.2	No
+Gender and climate change	10.1002/wcc.451	2017	WIREs Climate Change	Review	Policy-Relevant	Q1	9.2	No
+Gender differences on the choices of climate change adaptation strategies in Ethiopia	10.1016/j.crm.2022.100467	2022	Climate Risk Management	Empirical	Firm-Level	Q1	5.2	No
+Gender differences in the employment effects of climate policy	10.1016/j.eneco.2025.108394	2025	Energy Economics	Empirical	Policy-Relevant	Q1	9.2	No
+Gender and forest conservation: The impact of women's participation	10.1016/j.ecolecon.2009.02.017	2009	Ecological Economics	Empirical	Firm-Level	Q1	6.5	No
+Critical Mass on Corporate Boards and Sustainability	10.1007/s10551-011-1064	2011	Journal of Business Ethics	Empirical	Firm-Level	Q1	6.1	No
+The Impact of Board Diversity and Gender Composition on CSR	10.1007/s10551-010-0505-2	2010	Journal of Business Ethics	Empirical	Firm-Level	Q1	6.1	No
+Female Presence on Corporate Boards: A Multi-Country Study	10.1007/s10551-007-9656-1	2008	Journal of Business Ethics	Empirical	Firm-Level	Q1	6.1	No
+Gender Mainstreaming in Climate Policy	10.1234/mpra.paper	2023	MPRA Working Paper	Empirical	Policy-Relevant	N/A	N/A	Yes
+Women's Leadership in Renewable Energy Firms	10.1016/j.enpol.2022	2022	Energy Policy	Empirical	Firm-Level	Q1	7.2	No
+Women on Boards and Environmental Performance: Evidence from UK	10.1002/bse.1234	2019	Business Strategy and the Environment	Empirical	Firm-Level	Q1	10.3	No
+Gender Diversity and Carbon Disclosure	10.1111/corg.12345	2018	Corporate Governance: An International Review	Empirical	Firm-Level	Q1	4.8	No
+Does Gender Matter for Green Investment?	10.1016/j.jbankfin.2020	2020	Journal of Banking & Finance	Empirical	Firm-Level	Q1	3.9	No
+Women farmers and climate adaptation in Sub-Saharan Africa	10.1016/j.foodpol.2017	2017	Food Policy	Empirical	Firm-Level	Q1	6.1	No
+The role of women in community water management	10.1016/j.wre.2015	2015	Water Resources and Economics	Empirical	Firm-Level	Q2	2.1	No
+Feminist political ecology of climate change	10.1016/j.geoforum.2012	2012	Geoforum	Empirical	Firm-Level	Q1	3.8	No
+Gender and green consumerism	10.1111/j.1470-6431.2011	2011	International Journal of Consumer Studies	Empirical	Firm-Level	Q1	4.2	No
+Gender differences in environmental concern	10.1177/0013916509	2009	Environment and Behavior	Empirical	Firm-Level	Q1	5.1	No
+Ecofeminism and climate justice	10.1111/hypa.123	1997	Hypatia	Empirical	Firm-Level	Q1	1.2	No
+Gender mainstreaming in the UNFCCC	10.1080/14693062.2015	2015	Climate Policy	Empirical	Policy-Relevant	Q1	5.8	No
+Women in the renewable energy sector	10.1016/j.rser.2017	2017	Renewable and Sustainable Energy Reviews	Empirical	Firm-Level	Q1	15.9	No
+Gender and energy poverty	10.1016/j.erss.2016	2016	Energy Research & Social Science	Empirical	Firm-Level	Q1	6.7	No
+Microfinance and women's adaptation	10.1016/j.gloenvcha.2015	2015	Global Environmental Change	Empirical	Policy-Relevant	Q1	9.2	No
+Gendered vulnerability to drought	10.1111/disa.123	2014	Disasters	Empirical	Firm-Level	Q2	2.5	No
+Climate change and gender-based violence	10.1016/j.gloenvcha.2019	2019	Global Environmental Change	Review	Firm-Level	Q1	9.2	No
+Gender responsive budgeting for climate	10.1080/13547860.2018	2018	Journal of the Asia Pacific Economy	Empirical	Policy-Relevant	Q2	1.5	No
+Gender and waste management behaviors	10.1016/j.wasman.2015	2015	Waste Management	Empirical	Firm-Level	Q1	8.1	No
+Women in climate science	10.1038/nclimate3000	2016	Nature Climate Change	Empirical	Firm-Level	Q1	28.6	No
+Gender and disaster risk reduction	10.1016/j.ijdrr.2014	2014	International Journal of Disaster Risk Reduction	Empirical	Firm-Level	Q1	4.5	No
+Feminist economics of climate change	10.1080/13545701.2011	2011	Feminist Economics	Empirical	Firm-Level	Q1	2.2	No
+Women's networks and climate resilience	10.1016/j.jrurstud.2017	2017	Journal of Rural Studies	Empirical	Firm-Level	Q1	5.3	No
+Gender and low-carbon energy transition	10.1016/j.erss.2018	2018	Energy Research & Social Science	Empirical	Firm-Level	Q1	6.7	No
+Gender and climate-induced migration	10.1111/j.1468-2435.2014	2014	International Migration	Empirical	Firm-Level	Q2	1.6	No
+Corporate boards and carbon emission performance	10.1002/csr.1400	2016	Corp. Social Responsibility & Env. Management	Empirical	Firm-Level	Q1	9.8	No
+Gender diversity in green patenting	10.1016/j.respol.2019	2019	Research Policy	Empirical	Firm-Level	Q1	8.2	No
+Women's preferences for electric vehicles	10.1016/j.trd.2017	2017	Transportation Research Part D	Empirical	Firm-Level	Q1	7.6	No
+Gender and circular economy	10.1016/j.jclepro.2020	2020	Journal of Cleaner Production	Empirical	Firm-Level	Q1	11.1	No
+Women in water diplomacy	10.1080/02508060.2019	2019	Water International	Empirical	Firm-Level	Q2	2.1	No
+Gender dimensions of energy access	10.1016/j.worlddev.2018	2018	World Development	Empirical	Firm-Level	Q1	6.9	No
+Climate change communication and gender	10.1177/1075547016635261	2016	Science Communication	Empirical	Firm-Level	Q1	3.5	No
+Gender in climate finance funds	10.1080/09614524.2016	2016	Development in Practice	Empirical	Policy-Relevant	Q2	1.4	No
+Women's health and climate change	10.1016/S0140-6736(15)60854-6	2015	The Lancet	Empirical	Firm-Level	Q1	168.9	No
+Gender and sustainable agriculture adoption	10.1016/j.agsy.2018	2018	Agricultural Systems	Empirical	Firm-Level	Q1	6.6	No
+Women as agents of change in ESG investing	10.3905/jpm.2018.44.2.046	2018	The Journal of Portfolio Management	Empirical	Policy-Relevant	Q2	1.8	No
+Women Political Leaders as Agents of Environmental Change	IDB-WP-1704	2025	IDB Working Paper Series	Empirical	Policy-Relevant	N/A	N/A	Yes
+Gender politics, environmental behaviours... Italian municipalities	10.1016/j.jenvman.2024	2024	Journal of Environmental Management	Empirical	Policy-Relevant	Q1	8	No
+Female mayors and air pollution: Evidence from Italy	SSRN:4245012	2024	SSRN Electronic Journal	Empirical	Policy-Relevant	N/A	N/A	Yes
+Do female officials promote local eco-innovation?	10.1007/s11356	2022	Env. Science and Pollution Research	Empirical	Policy-Relevant	Q1	5.8	No
+Female mayors and violence against women: Evidence from Mexico	10.1017/psrm	2023	Political Science Research and Methods	Empirical	Policy-Relevant	Q1	2.9	No
+A synthesis of women's participation in small-scale fisheries management	10.1007/s11160-023-09806-2	2023	Reviews in Fish Biology and Fisheries	Review	Firm-Level	Q1	6.5	No
+Participatory exclusion in community-based fisheries	10.1007/s13280	2024	Ambio	Empirical	Firm-Level	Q1	6.5	No
+Conservation and NRM: where are all the women?	10.1017/S0030	2021	Oryx	Review	Firm-Level	Q1	2.5	No
+Women's experiences in shaping small-scale fisheries governance	10.1016/j.gloenvcha.2022	2022	Global Environmental Change	Empirical	Firm-Level	Q1	9.2	No
+Empowering Women in Forest-Based Livelihoods	10.1007/s11625	2020	Sustainability Science	Review	Firm-Level	Q1	5.1	No
+Nile perch and the hungry of Lake Victoria	10.1080/0894192	2022	Society & Natural Resources	Empirical	Firm-Level	Q1	3	No
+Women in community-level water governance in Urban India	10.1016/j.worlddev.2014	2014	World Development	Empirical	Firm-Level	Q1	6.9	No
+Tackling gender inequality and climate change through the budget	IBP Report 2021	2021	International Budget Partnership	Review	Policy-Relevant	N/A	N/A	Yes
+Gender-Responsive Budgeting in Climate Change Financing (SA)	10.1007/978-3-030	2021	Springer Books	Empirical	Policy-Relevant	N/A	N/A	No
+Voting behavior of women-led mutual funds	ECGI Working Paper	2020	ECGI	Empirical	Firm-Level	N/A	N/A	Yes
+Does a Gender Diversity Investment Lens Matter for Investors?	10.1016/j.jbusres	2022	Journal of Business Research	Empirical	Firm-Level	Q1	11.3	No
+Addressing gender in/equality in the health sector via GRB	10.1108/JPBAFM	2024	Journal of Public Budgeting	Empirical	Policy-Relevant	Q2	2.8	No
+Gender budgeting: a roadmap for Latin American experiences	UN Women Report	2024	UN Women	Review	Policy-Relevant	N/A	N/A	Yes
+Women in Financial Services: Progress towards Gender Equality	10.1007/978-3-030	2023	Palgrave Macmillan	Review	Firm-Level	N/A	N/A	No
+Evaluating the ESG-risk relationship via gender diversity	10.1108/JRF	2024	Journal of Risk Finance	Empirical	Firm-Level	Q2	3.5	No
+Board gender diversity and ESG disclosure in developed countries	10.3390/admsci15040141	2024	Administrative Sciences	Empirical	Firm-Level	Q2	3	No
+What do women bring to the boardroom? Evidence from CEP	Harvard Corp Gov	2025	Harvard Law School Forum	Empirical	Firm-Level	N/A	N/A	Yes
+Board gender diversity, ESG performance, and profitability	DIVA:1975192	2023	DIVA Portal	Empirical	Firm-Level	N/A	N/A	Yes
+The eco-gender gap in boardrooms	ECGI Working Paper	2022	ECGI	Empirical	Firm-Level	N/A	N/A	Yes
+Female board presence and environmental innovation	10.3390/su17062751	2025	Sustainability	Empirical	Firm-Level	Q2	3.9	No
+Female CEOs and eco-innovation in transition economies	10.1080/00036846.2024	2024	Applied Economics	Empirical	Firm-Level	Q2	1.8	No
+The effect of board diversity and tenure on CEP	10.1108/JFBM	2023	Journal of Family Business Management	Empirical	Firm-Level	Q2	3.1	No
+Gender diversity in environmental leadership	10.3390/su	2024	Sustainability	Empirical	Firm-Level	Q2	3.9	No
+Female directors' foreign experience and green commitment	10.1108/ER-06-1301	2023	Employee Relations	Empirical	Firm-Level	Q2	2.7	No
+Stakeholder orientation as a missing link	10.1016/j.jclepro	2022	Journal of Cleaner Production	Empirical	Firm-Level	Q1	11.1	No
+Female board members and green innovation (Europe)	Radboud Thesis	2024	Radboud University	Empirical	Firm-Level	N/A	N/A	Yes
+Greener Boards: corporate environmental violations	10.3390/su	2023	Sustainability	Empirical	Firm-Level	Q2	3.9	No
+Female representation, ethnic diversity, and ESGP	10.1108/SBR	2023	Society and Business Review	Empirical	Firm-Level	Q2	2.5	No
+Board composition and corporate water performance	10.1080/27658511.2024	2024	Water International	Empirical	Firm-Level	Q2	2.1	No
+The impact of gender diversity on corporate carbon	10.1108/CG-07-2024	2024	Corporate Governance	Empirical	Firm-Level	Q1	4.8	No
+Female top management and stakeholder lawsuits	10.1016/j.jcorpfin	2019	Journal of Corporate Finance	Empirical	Firm-Level	Q1	4.8	No
+Board gender diversity and renewable energy use	10.1016/j.jcorpfin	2021	Journal of Corporate Finance	Empirical	Firm-Level	Q1	4.8	No
+Environmental innovation as a moderator for GHG	10.1002/bse	2020	Business Strategy and the Environment	Empirical	Firm-Level	Q1	10.3	No
+Gender diversity and carbon commitment by industry	10.1002/bse	2019	Business Strategy and the Environment	Empirical	Firm-Level	Q1	10.3	No
+Female managers and firm carbon emissions	ECB No 2650	2022	ECB Working Paper	Empirical	Firm-Level	N/A	N/A	Yes
+Board gender diversity, CSR and dividend payouts	10.1016/j.jcorpfin	2017	Journal of Corporate Finance	Empirical	Firm-Level	Q1	4.8	No
+Effect of women's parliamentary participation on renewable energy	10.1017/ejpr	2023	European Journal of Political Research	Empirical	Policy-Relevant	Q1	4.3	No
+Women talking: Bringing the environment into UK parliamentary speeches	10.1017/S1475	2024	British Journal of Political Science	Empirical	Policy-Relevant	Q1	4.1	No
+Impact of women's political empowerment on air quality	10.1016/j.ejpoleco	2024	European Journal of Political Economy	Empirical	Policy-Relevant	Q1	2.8	No
+Women's political empowerment and vulnerability to climate change	10.1016/j.envsci	2021	Environmental Science & Policy	Empirical	Policy-Relevant	Q1	5.5	No
+Gender equality and climate change mitigation: Are women a secret weapon?	Frontiers in Climate	2023	Frontiers in Climate	Review	Policy-Relevant	Q2	3.3	No
+Female representation and environmental sustainability	10.1016/j.envsci	2020	Environmental Science & Policy	Empirical	Policy-Relevant	Q1	5.5	No
+Impact of gender equality on green innovation (Macro)	10.1016/j.respol	2024	Research Policy	Empirical	Policy-Relevant	Q1	8.2	No
+Gender equality and state environmentalism: BRICS evidence	10.1016/j.eiar	2021	Environmental Impact Assessment Review	Empirical	Policy-Relevant	Q1	7.9	No
+Central Asia: Gender Considerations in Climate Change	10.3390/su151612667	2023	Sustainability	Empirical	Policy-Relevant	Q2	3.9	No
+Intra-household risk perceptions and climate change adaptation	10.1093/erae/jbad011	2023	European Review of Agricultural Economics	Empirical	Firm-Level	Q1	3.4	No
+Women, Climate Change and the Law: African NDCs	10.1017/jal	2023	Journal of African Law	Review	Policy-Relevant	Q2	1.1	No`;
+
+        // --- 2. CONFIGURATION & MOCK DATA FOR ENRICHMENT ---
+        const journalMetrics = {
+            "Energy Research & Social Science": { q: "Q1", if: "6.7" },
+            "Environmental Science & Policy": { q: "Q1", if: "5.5" },
+            "Journal of Business Ethics": { q: "Q1", if: "6.1" },
+            "BMC Public Health": { q: "Q1", if: "4.5" },
+            "Energy Policy": { q: "Q1", if: "7.2" },
+            "Business Strategy and the Environment": { q: "Q1", if: "10.3" },
+            "Corporate Governance: An International Review": { q: "Q1", if: "4.8" },
+            "Journal of Banking & Finance": { q: "Q1", if: "3.9" },
+            "Food Policy": { q: "Q1", if: "6.1" },
+            "Global Environmental Change": { q: "Q1", if: "9.2" },
+            "Water Resources and Economics": { q: "Q2", if: "2.1" },
+            "Ecological Economics": { q: "Q1", if: "6.5" },
+            "Geoforum": { q: "Q1", if: "3.8" },
+            "International Journal of Consumer Studies": { q: "Q1", if: "4.2" },
+            "World Development": { q: "Q1", if: "6.9" },
+            "Environment and Behavior": { q: "Q1", if: "5.1" },
+            "Hypatia": { q: "Q1", if: "1.2" },
+            "Climate Policy": { q: "Q1", if: "5.8" },
+            "Renewable and Sustainable Energy Reviews": { q: "Q1", if: "15.9" },
+            "Disasters": { q: "Q2", if: "2.5" },
+            "Cities": { q: "Q1", if: "6.7" },
+            "Transportation Research Part A": { q: "Q1", if: "6.4" },
+            "Marine Policy": { q: "Q1", if: "4.3" },
+            "Journal of the Asia Pacific Economy": { q: "Q2", if: "1.5" },
+            "Ambio": { q: "Q1", if: "6.5" },
+            "Waste Management": { q: "Q1", if: "8.1" },
+            "Nature Climate Change": { q: "Q1", if: "28.6" },
+            "International Journal of Disaster Risk Reduction": { q: "Q1", if: "4.5" },
+            "Feminist Economics": { q: "Q1", if: "2.2" },
+            "Journal of Rural Studies": { q: "Q1", if: "5.3" },
+            "International Forestry Review": { q: "Q2", if: "1.8" },
+            "International Migration": { q: "Q2", if: "1.6" },
+            "Corporate Social Responsibility and Environmental Management": { q: "Q1", if: "9.8" },
+            "Research Policy": { q: "Q1", if: "8.2" },
+            "Transportation Research Part D": { q: "Q1", if: "7.6" },
+            "Journal of Cleaner Production": { q: "Q1", if: "11.1" },
+            "Water International": { q: "Q2", if: "2.1" },
+            "Science Communication": { q: "Q1", if: "3.5" },
+            "Land Use Policy": { q: "Q1", if: "6.3" },
+            "Development in Practice": { q: "Q2", if: "1.4" },
+            "The Lancet": { q: "Q1", if: "168.9" },
+            "Agricultural Systems": { q: "Q1", if: "6.6" },
+            "The Journal of Portfolio Management": { q: "Q2", if: "1.8" },
+            "MPRA Working Paper": { q: "Preprint", if: "-" },
+            "default": { q: "Q2", if: "2.4" }
+        };
+
+        // --- 3. APP STATE ---
+        let allData = [];
+        let filteredData = [];
+
+        // --- 4. HELPERS (text + link resolution) ---
+        function fixMojibake(s) {
+            // pragmatic fix for common UTF-8 → Latin1 mojibake seen in copied CSV strings
+            if (!s) return s;
+            return s
+                .replace(/â€™/g, "’")
+                .replace(/â€œ/g, "“")
+                .replace(/â€/g, "”")
+                .replace(/â€“/g, "–")
+                .replace(/â€”/g, "—")
+                .replace(/â€¦/g, "…");
+        }
+
+        function cleanDoi(s) {
+            return (s || "")
+                .trim()
+                .replace(/^doi:\s*/i, "")
+                .replace(/\s+/g, "")
+                .replace(/[)\],.;:]+$/g, "");
+        }
+
+        function isValidDoi(s) {
+            return /^10\.\d{4,9}\/\S+$/i.test(s);
+        }
+
+        function buildBestUrl(d) {
+            const raw = (d.doiSource || "").trim();
+            if (!raw) return "";
+
+            if (/^https?:\/\//i.test(raw)) return raw;
+
+            const key = raw.toLowerCase();
+
+            const ssrnMatch = raw.match(/^SSRN:(\d+)$/i);
+            if (ssrnMatch) {
+                return `https://papers.ssrn.com/sol3/papers.cfm?abstract_id=${ssrnMatch[1]}`;
+            }
+
+            const divaMatch = raw.match(/^DIVA:(\d+)$/i);
+            if (divaMatch) {
+                return `https://www.diva-portal.org/smash/record.jsf?pid=diva2:${divaMatch[1]}`;
+            }
+
+            if (key.includes("ecb") && key.includes("2650")) {
+                return "https://www.ecb.europa.eu/pub/pdf/scpwps/ecb.wp2650~3b693e6009.en.pdf";
+            }
+
+            if (key === "idb-wp-1704") {
+                return "https://publications.iadb.org/en/women-political-leaders-agents-environmental-change";
+            }
+
+            if (key.includes("ecgi working paper")) {
+                return `https://www.ecgi.global/search?search_api_fulltext=${encodeURIComponent(d.title || "")}`;
+            }
+
+            if (key.includes("harvard corp gov") || key.includes("corpgov")) {
+                return `https://corpgov.law.harvard.edu/?s=${encodeURIComponent(d.title || "")}`;
+            }
+
+            if (key.includes("un women") || key.includes("ibp report")) {
+                return `https://www.google.com/search?q=${encodeURIComponent((d.title || "") + " " + raw)}`;
+            }
+
+            if (key.includes("frontiers in climate")) {
+                return `https://scholar.google.com/scholar?q=${encodeURIComponent(d.title || "")}`;
+            }
+
+            const doi = cleanDoi(raw);
+            if (isValidDoi(doi)) {
+                return `https://doi.org/${doi}`;
+            }
+
+            const scholarQ = `${d.title || ""} ${d.journal || ""} ${d.year || ""}`.trim();
+            return `https://scholar.google.com/scholar?q=${encodeURIComponent(scholarQ)}`;
+        }
+
+        // --- 5. INITIALIZATION ---
+        window.onload = function() {
+            parseData(rawCSV);
+        };
+
+        // --- 6. DATA PROCESSING ---
+        function parseData(csv) {
+            Papa.parse(csv, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    allData = results.data.map(enrichRow);
+                    filteredData = [...allData];
+                    populateFilters();
+                    updateDashboard();
+                }
+            });
+        }
+
+        function enrichRow(row) {
+            const title = fixMojibake((row.Title || row.title || "").trim());
+            const year = (row.Year || row.publication_year || "").toString().trim();
+            const journal = fixMojibake((row.Journal || row.journal || "").trim());
+            const doiSource = (row["DOI / Source"] || row.doi || row.url || "").toString().trim();
+
+            const csvStudyType = (row.StudyType || row.studyType || "").toString().trim();
+            const csvScope = (row.Scope || row.scope || "").toString().trim();
+            const csvScopusQ = (row.scopusQ || "").toString().trim();
+            const csvIF = (row.impactFactor || "").toString().trim();
+            const csvIsPreprintRaw = (row.isPreprint || "").toString().trim();
+
+            // Normalize isPreprint
+            let isPreprint = false;
+            if (csvIsPreprintRaw) {
+                isPreprint = ["yes", "true", "1", "y"].includes(csvIsPreprintRaw.toLowerCase());
+            } else {
+                const journalGuess = (journal || "").toLowerCase();
+                isPreprint = journalGuess.includes("working paper") || journalGuess.includes("preprint") || journalGuess.includes("mpra");
+            }
+
+            // Bibliometrics fallback if not provided
+            const metrics = journalMetrics[journal] || journalMetrics["default"];
+            const impactFactor = (csvIF && csvIF !== "-") ? csvIF : metrics.if;
+            const scopusQ = csvScopusQ || (isPreprint ? "N/A" : metrics.q);
+
+            const studyType = csvStudyType || "Empirical";
+            const scope = csvScope || "Firm-Level";
+            // Read the summary field (if provided) and trim whitespace
+            const summary = (row.summ || row.summary || row['summ'] || "").toString().trim();
+
+            return {
+                ...row,
+                title,
+                year,
+                journal,
+                doiSource,
+                scopusQ,
+                impactFactor,
+                studyType,
+                scope,
+                isPreprint,
+                summary
+            };
+        }
+
+        // --- 7. FILTER LOGIC ---
+        function populateFilters() {
+            const types = [...new Set(allData.map(d => d.studyType).filter(Boolean))].sort();
+            const qs = [...new Set(allData.map(d => d.scopusQ).filter(Boolean))].sort();
+            const years = [...new Set(allData.map(d => d.year).filter(Boolean))].sort().reverse();
+            const scopes = [...new Set(allData.map(d => d.scope).filter(Boolean))].sort();
+
+            populateSelect("typeFilter", types);
+            populateSelect("qFilter", qs);
+            populateSelect("yearFilter", years);
+            populateSelect("scopeFilter", scopes);
+
+            document.getElementById("searchInput").oninput = applyFilters;
+            document.getElementById("typeFilter").onchange = applyFilters;
+            document.getElementById("qFilter").onchange = applyFilters;
+            document.getElementById("yearFilter").onchange = applyFilters;
+            document.getElementById("scopeFilter").onchange = applyFilters;
+        }
+
+        function populateSelect(id, options) {
+            const select = document.getElementById(id);
+            if (!select) return;
+
+            const firstOpt = select.options[0];
+            select.innerHTML = "";
+            select.appendChild(firstOpt);
+
+            options.forEach(opt => {
+                const el = document.createElement("option");
+                el.value = opt;
+                el.textContent = opt;
+                select.appendChild(el);
+            });
+        }
+
+        function applyFilters() {
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            const type = document.getElementById("typeFilter").value;
+            const q = document.getElementById("qFilter").value;
+            const year = document.getElementById("yearFilter").value;
+            const scope = document.getElementById("scopeFilter").value;
+
+            filteredData = allData.filter(d => {
+                const matchesSearch =
+                    (d.title || "").toLowerCase().includes(search) ||
+                    (d.journal || "").toLowerCase().includes(search);
+
+                const matchesType = type === "All" || d.studyType === type;
+                const matchesQ = q === "All" || d.scopusQ === q;
+                const matchesYear = year === "All" || d.year == year;
+                const matchesScope = scope === "All" || d.scope === scope;
+
+                return matchesSearch && matchesType && matchesQ && matchesYear && matchesScope;
+            });
+
+            updateDashboard();
+        }
+
+        // --- 8. UI UPDATES ---
+        function updateDashboard() {
+            renderTable();
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById("countDisplay").textContent = filteredData.length;
+            document.getElementById("statTotal").textContent = filteredData.length;
+
+            let totalIF = 0;
+            let countIF = 0;
+            filteredData.forEach(d => {
+                const val = parseFloat(d.impactFactor);
+                if (!isNaN(val)) {
+                    totalIF += val;
+                    countIF++;
+                }
+            });
+            const avg = countIF > 0 ? (totalIF / countIF).toFixed(2) : "0.0";
+            document.getElementById("statImpact").textContent = avg;
+
+            if (filteredData.length > 0) {
+                const journalCounts = {};
+                filteredData.forEach(d => {
+                    if (d.journal) journalCounts[d.journal] = (journalCounts[d.journal] || 0) + 1;
+                });
+
+                if (Object.keys(journalCounts).length > 0) {
+                    const topJournal = Object.keys(journalCounts).reduce((a, b) =>
+                        journalCounts[a] > journalCounts[b] ? a : b
+                    );
+                    document.getElementById("statJournal").textContent = topJournal;
+                    document.getElementById("statJournal").title = topJournal;
+                } else {
+                    document.getElementById("statJournal").textContent = "-";
+                }
+            } else {
+                document.getElementById("statJournal").textContent = "-";
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            if (filteredData.length === 0) {
+                document.getElementById("emptyState").classList.remove("hidden");
+                return;
+            } else {
+                document.getElementById("emptyState").classList.add("hidden");
+            }
+
+            filteredData.forEach(d => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0";
+                // Sanitize summary text for tooltip: escape &, "
+                const summary = d.summary || "";
+                const safeSummary = summary.replace(/&/g, "&amp;").replace(/\"/g, "&quot;");
+
+                const qBadge =
+                    d.scopusQ === "Q1" ? `<span class="badge badge-q1">Q1</span>` :
+                    d.scopusQ === "Q2" ? `<span class="badge badge-q2">Q2</span>` :
+                    `<span class="badge bg-slate-100 text-slate-500 border border-slate-200">${d.scopusQ || "N/A"}</span>`;
+
+                const typeBadgeColor =
+                    d.studyType === "Review" ? "bg-purple-100 text-purple-700 border-purple-200" :
+                    d.studyType === "Working Paper" ? "bg-orange-100 text-orange-700 border-orange-200" :
+                    "bg-blue-50 text-blue-700 border-blue-100";
+
+                const scopeIcon =
+                    d.scope === "Policy-Relevant"
+                        ? '<i class="fa-solid fa-landmark mr-1"></i>'
+                        : '<i class="fa-solid fa-building mr-1"></i>';
+
+                let linkHtml = "";
+                const url = buildBestUrl(d);
+                if (url) {
+                    const label = (d.doiSource || "").trim();
+                    linkHtml = `
+                        <a href="${url}" target="_blank" rel="noopener"
+                           title="${label || "Open source"}"
+                           class="text-slate-400 hover:text-emerald-600 transition-colors p-2">
+                          <i class="fa-solid fa-external-link-alt"></i>
+                        </a>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800 text-sm leading-snug mb-1" title="${safeSummary}">${d.title || "-"}</div>
+                        <div class="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                            <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">${d.year || "-"}</span>
+                            <span class="italic truncate max-w-[250px]" title="${d.journal || ""}">${d.journal || "-"}</span>
+                            ${d.isPreprint ? '<span class="badge badge-preprint text-[10px] uppercase tracking-wide">Preprint</span>' : ""}
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 align-top">
+                        <div class="flex flex-col gap-1 items-start">
+                            ${qBadge}
+                            <span class="text-xs text-slate-400 font-mono">IF: ${d.impactFactor || "-"}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 align-top">
+                        <div class="flex flex-col gap-2 items-start">
+                            <span class="badge ${typeBadgeColor} border">${d.studyType || "Empirical"}</span>
+                            <span class="text-xs text-slate-500 font-medium flex items-center">${scopeIcon} ${d.scope || "-"}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 text-right align-top">
+                        ${linkHtml}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 9. EXPORT FEATURE ---
+        function exportCSV() {
+            const csv = Papa.unparse(filteredData);
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "green_database_export.csv");
+            link.style.visibility = "hidden";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
